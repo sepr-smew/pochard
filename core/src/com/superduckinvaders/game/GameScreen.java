@@ -1,6 +1,9 @@
 package com.superduckinvaders.game;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
+import com.badlogic.gdx.Input.Keys;
+import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Cursor;
 import com.badlogic.gdx.graphics.GL20;
@@ -20,6 +23,7 @@ import com.superduckinvaders.game.assets.Assets;
 import com.superduckinvaders.game.entity.*;
 import com.superduckinvaders.game.entity.Character;
 import com.superduckinvaders.game.entity.item.PowerupManager;
+import com.superduckinvaders.game.util.KeySequenceListener;
 
 import java.awt.*;
 import java.util.ArrayList;
@@ -121,7 +125,26 @@ public class GameScreen implements Screen {
      */
     @Override
     public void show() {
-        Gdx.input.setInputProcessor(null);
+        // Setup input
+        InputMultiplexer inputMultiplexer = new InputMultiplexer();
+
+        final int[] superDamageSequence = {Keys.N, Keys.I, Keys.N, Keys.E};
+        inputMultiplexer.addProcessor(new KeySequenceListener(superDamageSequence) {
+            @Override
+            public void done() {
+                round.cheatSuperDamage = !round.cheatSuperDamage;
+            }
+        });
+
+        final int[] infiniteFireSequence = {Keys.L};
+        inputMultiplexer.addProcessor(new KeySequenceListener(infiniteFireSequence) {
+            @Override
+            public void done() {
+                round.cheatInfiniteFire = !round.cheatInfiniteFire;
+            }
+        });
+
+        Gdx.input.setInputProcessor(inputMultiplexer);
 
         camera = new OrthographicCamera(DuckGame.GAME_WIDTH/SCALE, DuckGame.GAME_HEIGHT/SCALE);
 //        camera.zoom -= 0.5;

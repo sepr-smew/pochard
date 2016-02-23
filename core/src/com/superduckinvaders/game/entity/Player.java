@@ -9,6 +9,8 @@ import com.superduckinvaders.game.Round;
 import com.superduckinvaders.game.assets.Assets;
 import com.superduckinvaders.game.assets.TextureSet;
 import com.superduckinvaders.game.entity.item.PowerupManager;
+import com.superduckinvaders.game.util.KeySequenceListener;
+import com.badlogic.gdx.Input.Keys;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -187,6 +189,11 @@ public class Player extends Character {
      * Precalculated for speed
      */
     private final float SQUAREROOT2 = (float)Math.sqrt(2);
+
+    /**
+     * If was the mouse was clicked last tick, for the infinite fire cheat.
+     */
+    private boolean clickedLastTick = false;
 
     /**
      * Initialises this Player at the specified coordinates and with the specified initial health.
@@ -532,28 +539,31 @@ public class Player extends Character {
 
     /**
      * Checks the necessary inputs for shooting, meleeing and flying and performs the necessary actions
-     * Shooting can only be done if enough time has passed between now and the previous shot
+     * Shooting can only be done if enough time has passed between now and the previous shot (unless a cheat is used)
      * Flying can only occur if the flyingTimer is full and the player is not stationary
      */
     private void updatePlayerInputs(){
         // Left mouse to attack.
         if (Gdx.input.isButtonPressed(Input.Buttons.LEFT) && !isFlying && !isMeleeing) {
-            //Limits attack rate to attackTimer
-            if (attackTimer >= PLAYER_ATTACK_DELAY * (parent.powerUpManager.getIsActive(PowerupManager.powerupTypes.RATE_OF_FIRE) ? PLAYER_ATTACK_DELAY_MULTIPLIER : 1)) {
+            //Limits attack rate based on a bunch of conditions.
+            float attackMultiplier = parent.powerUpManager.getIsActive(PowerupManager.powerupTypes.RATE_OF_FIRE) ? PLAYER_ATTACK_DELAY_MULTIPLIER : 1;
+            if ((parent.cheatInfiniteFire && !clickedLastTick) ||
+                    attackTimer >= PLAYER_ATTACK_DELAY * attackMultiplier) {
                 attackTimer = 0;
 
-                    //Update aim direction
-                    Vector3 target = parent.unproject(Gdx.input.getX(), Gdx.input.getY());
+                //Update aim direction
+                Vector3 target = parent.unproject(Gdx.input.getX(), Gdx.input.getY());
 
-                    //Alter starting point based on if on water or not
-                    if(isOnWater()){
-                        fireAt(projectileDrawPointSwimming[facing][0],projectileDrawPointSwimming[facing][1],target.x, target.y, 500, 50);
-                    }
-                    else
-                        fireAt(projectileDrawPoint[facing][0],projectileDrawPoint[facing][1],target.x, target.y + 4, 500, 50);
-
+                //Alter starting point based on if on water or not
+                int attackDamage = parent.cheatSuperDamage ? 9999 : 50;
+                if(isOnWater()) {
+                    fireAt(projectileDrawPointSwimming[facing][0],projectileDrawPointSwimming[facing][1],target.x, target.y, 500, attackDamage);
+                } else {
+                    fireAt(projectileDrawPoint[facing][0],projectileDrawPoint[facing][1],target.x, target.y + 4, 500, attackDamage);
+                }
             }
         }
+        clickedLastTick = Gdx.input.isButtonPressed(Input.Buttons.LEFT);
 
         if(Gdx.input.isKeyJustPressed(Input.Keys.E)){
             if(!isOnWater() && !isFlying)

@@ -2,6 +2,8 @@ package com.superduckinvaders.game;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.Input.Keys;
+import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.maps.tiled.TiledMap;
 import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
@@ -23,6 +25,7 @@ import com.superduckinvaders.game.objective.CollectObjective;
 import com.superduckinvaders.game.objective.KillObjective;
 import com.superduckinvaders.game.objective.Objective;
 import com.superduckinvaders.game.ui.FloatyNumbersManager;
+import com.superduckinvaders.game.util.KeySequenceListener;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -82,6 +85,16 @@ public class Round {
     public FloatyNumbersManager floatyNumbersManager = new FloatyNumbersManager();
 
     /**
+     * Whether the super-damage cheat is enabled.
+     */
+    public boolean cheatSuperDamage = false;
+
+    /**
+     * Whether the infinite fire cheat is enabled.
+     */
+    public boolean cheatInfiniteFire = false;
+
+    /**
      * Initialises a new Round with the specified map.
      *
      * @param parent the game the round is associated with
@@ -99,17 +112,10 @@ public class Round {
         int startX = Integer.parseInt(map.getProperties().get("StartX", "0", String.class)) * getTileWidth();
         int startY = Integer.parseInt(map.getProperties().get("StartY", "0", String.class)) * getTileHeight();
 
-
         player = new Player(this, startX, startY);
 
         entities = new ArrayList<Entity>(128);
         entities.add(player);
-
-
-        //createUpgrade(startX + 40, startY, Player.Upgrade.GUN);
-//        createPowerup(startX + 60, startY, PowerupManager.powerupTypes.RATE_OF_FIRE, 60);
-//        createPowerup(startX + 80, startY, PowerupManager.powerupTypes.INVULNERABLE, 60);
-//        createPowerup(startX + 100, startY, PowerupManager.powerupTypes.SCORE_MULTIPLIER, 60);
 
         spawnRandomMobs(mobs, 200, 200, 1000, 1000);
 
@@ -499,12 +505,7 @@ public class Round {
             }
         }
 
-        if (Gdx.input.isKeyJustPressed(Input.Keys.P)) {
-            for (int x=0;x<1000; x++) {
-                createProjectile(MathUtils.random(300, 1500), MathUtils.random(300, 1500), MathUtils.random(300, 1500), MathUtils.random(300, 1500), 500, 0, 0, 0, player);
-            }
-        }
-        //System.out.println("total:"+totalNumber+" updated:"+updateNumber+" numMobs:"+numMobs);
+        System.out.println(cheatInfiniteFire);
     }
 
 
