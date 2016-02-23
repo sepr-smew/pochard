@@ -504,8 +504,6 @@ public class Round {
                 //updateNumber++;
             }
         }
-
-        System.out.println(cheatInfiniteFire);
     }
 
 
