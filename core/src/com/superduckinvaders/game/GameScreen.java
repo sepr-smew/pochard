@@ -128,7 +128,11 @@ public class GameScreen implements Screen {
         // Setup input
         InputMultiplexer inputMultiplexer = new InputMultiplexer();
 
-        final int[] superDamageSequence = {Keys.N, Keys.I, Keys.N, Keys.E};
+        final int[] superDamageSequence = {
+                Keys.UP, Keys.UP, Keys.DOWN, Keys.DOWN,
+                Keys.LEFT, Keys.RIGHT, Keys.LEFT, Keys.RIGHT,
+                Keys.B, Keys.A
+        };
         inputMultiplexer.addProcessor(new KeySequenceListener(superDamageSequence) {
             @Override
             public void done() {
@@ -136,7 +140,10 @@ public class GameScreen implements Screen {
             }
         });
 
-        final int[] infiniteFireSequence = {Keys.L};
+        final int[] infiniteFireSequence = {
+                Keys.N, Keys.O,
+                Keys.C, Keys.O, Keys.O, Keys.L, Keys.D, Keys.O, Keys.W, Keys.N
+        };
         inputMultiplexer.addProcessor(new KeySequenceListener(infiniteFireSequence) {
             @Override
             public void done() {
