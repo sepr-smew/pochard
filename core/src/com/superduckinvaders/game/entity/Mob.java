@@ -3,6 +3,7 @@ package com.superduckinvaders.game.entity;
 
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.math.Vector2;
 import com.superduckinvaders.game.Round;
 import com.superduckinvaders.game.ai.AI;
 import com.superduckinvaders.game.ai.DummyAI;
@@ -69,8 +70,15 @@ public class Mob extends Character {
 
         this.type = type;
 
-        if(type==MobType.BOSS)
-            disableCollision();
+        if(type==MobType.BOSS) {
+            disableCollision(); // FIXME: not using this collision
+        }
+
+        this.categoryBits = MOB_BITS;
+        this.enemyBits = PLAYER_BITS;
+
+        createDynamicBody(MOB_BITS, (short)(ALL_BITS & (~MOB_BITS)), MOB_GROUP, false);
+        this.body.setLinearDamping(20f);
     }
 
     
@@ -89,29 +97,17 @@ public class Mob extends Character {
     public void setSpeed(int newSpeed){
         this.speed = newSpeed;
     }
-    
-    /**
-     * Change where the given mob moves to according to its speed and a new direction vector.
-     * @param dirX x component of the direction vector
-     * @param dirY y component of the direction vector
-     */
-    public void setVelocity(float dirX, float dirY){
-    	if(dirX == 0 && dirY==0){
-    		velocityX=0;
-    		velocityY=0;
-    		return;
-    	}
-    	float magnitude = (float) Math.sqrt(dirX*dirX + dirY*dirY);
-    	velocityX = (dirX*speed)/magnitude;
-    	velocityY = (dirY*speed)/magnitude;
 
+    public float getSpeed(){
+        return this.speed;
     }
+
 
     /**
      * @return The width of the Mob. Uses the smaller swimming sprites
      */
     @Override
-    public int getWidth() {
+    public float getWidth() {
             return walkingTextureSet.getTexture(TextureSet.FACING_FRONT, 0).getRegionWidth();
     }
 
@@ -119,7 +115,7 @@ public class Mob extends Character {
      * @return The height of the Mob. Uses the smaller swimming sprites
      */
     @Override
-    public int getHeight() {
+    public float getHeight() {
             return walkingTextureSet.getTexture(TextureSet.FACING_FRONT, 0).getRegionHeight()*3/4;
 
     }
@@ -185,7 +181,7 @@ public class Mob extends Character {
             }
 
             if (powerup != null) {
-                parent.createPowerup(x, y, powerup, 10);
+                parent.createPowerup(getX(), getY(), powerup, 10);
             }
 
             if(type==MobType.BOSS) {
@@ -200,7 +196,7 @@ public class Mob extends Character {
         }
 
         // Update animation state time.
-        if (velocityX != 0 || velocityY != 0) {
+        if (!getVelocity().isZero(0.1f)) {
             stateTime += delta;
         } else {
             stateTime = 0;
@@ -209,12 +205,24 @@ public class Mob extends Character {
         super.update(delta);
     }
 
+    public void applyVelocity(Vector2 destination){
+        Vector2 velocity = destination.sub(getCentre())
+                .setLength(getSpeed());
+//        if (isStunned()){
+//            velocity.scl(0.4f);
+//        }
+        setVelocityClamped(velocity);
+    }
+
     /**
      * Renders the Mob with correct textures/animations
      * @param spriteBatch the sprite batch on which to render
      */
     @Override
     public void render(SpriteBatch spriteBatch) {
+
+        float x = getX();
+        float y = getY();
 
         if(type==MobType.RANGED) {
             if(isOnWater()){

@@ -1,5 +1,6 @@
 package com.superduckinvaders.game.ai;
 
+import com.badlogic.gdx.math.Vector2;
 import com.superduckinvaders.game.Round;
 import com.superduckinvaders.game.entity.Mob;
 
@@ -37,7 +38,7 @@ public class BossAI extends AI {
     /**
      * The speed to fire projectiles at
      */
-    private final float PROJECTILE_SPEED = 300;
+    private final float PROJECTILE_SPEED = 30;
 
     /**
      * The frequency to fire projectile bursts at
@@ -60,14 +61,7 @@ public class BossAI extends AI {
      */
     private int burstRemaining;
 
-    /**
-     * The current x position of the player
-     */
-    private float playerX;
-    /**
-     * The current y position of the player
-     */
-    private float playerY;
+    private Vector2 playerPos;
 
     /**
      * Create an instance of BossAi
@@ -75,14 +69,6 @@ public class BossAI extends AI {
      */
     public BossAI(Round round){
         super(round);
-    }
-
-    /**
-     * Updates this AI with the player's last coordinates.
-     */
-    protected void updatePlayerCoords() {
-        playerX = (int) round.getPlayer().getX();
-        playerY = (int) round.getPlayer().getY();
     }
 
     /**
@@ -100,7 +86,7 @@ public class BossAI extends AI {
 
         attackTimer-=delta;//Updates the attackTimer
 
-        updatePlayerCoords();
+        playerPos = round.getPlayer().getCentre();
         //float distanceFromPlayer = mob.distanceTo(playerX, playerY);
 
         //Moves left or right based on isMoveLeft
@@ -109,7 +95,7 @@ public class BossAI extends AI {
                 isMoveLeft=false;
             }
             else{
-                mob.setVelocity(-SPEED, 0);
+                mob.applyVelocity(new Vector2(-SPEED, 0));
             }
         }
         else{
@@ -117,7 +103,7 @@ public class BossAI extends AI {
                 isMoveLeft=true;
             }
             else{
-                mob.setVelocity(SPEED, 0);
+                mob.setVelocity(new Vector2(SPEED, 0));
             }
         }
 
@@ -128,7 +114,7 @@ public class BossAI extends AI {
         }
         if(burstRemaining>=0){
             if (burstRemaining % 5 == 0) {
-                mob.fireAt(playerX, playerY, (int) PROJECTILE_SPEED, 1);
+                mob.fireAt(playerPos, (int) PROJECTILE_SPEED, 1);
             }
             burstRemaining--;
         }

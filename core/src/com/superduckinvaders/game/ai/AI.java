@@ -1,5 +1,6 @@
 package com.superduckinvaders.game.ai;
 
+import com.badlogic.gdx.math.Vector2;
 import com.superduckinvaders.game.Round;
 import com.superduckinvaders.game.entity.Mob;
 
@@ -7,7 +8,6 @@ import com.superduckinvaders.game.entity.Mob;
  * Defines movement and attacking behaviour for Mobs.
  */
 public abstract class AI {
-    
     /**
      * The round the Mob this AI controls is a part of.
      */
@@ -21,6 +21,7 @@ public abstract class AI {
     public AI(Round round) {
         this.round = round;
     }
+
 
     /**
      * Updates this AI.

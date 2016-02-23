@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.superduckinvaders.game.Round;
 import com.superduckinvaders.game.assets.Assets;
@@ -182,11 +183,6 @@ public class Player extends Character {
      */
     private float accY=0;
 
-    /**
-     * Used in flying to normalise direction vectors
-     * Precalculated for speed
-     */
-    private final float SQUAREROOT2 = (float)Math.sqrt(2);
 
     /**
      * Initialises this Player at the specified coordinates and with the specified initial health.
@@ -197,6 +193,9 @@ public class Player extends Character {
      */
     public Player(Round parent, int x, int y) {
         super(parent, x, y, PLAYER_HEALTH);
+        enemyBits = MOB_BITS | PROJECTILE_BITS;
+        MELEE_RANGE = 40f;
+        createDynamicBody(PLAYER_BITS, ALL_BITS, NO_GROUP, false);
 
         //Fill the correct values for the projectile draw points
         projectileDrawPoint[TextureSet.FACING_FRONT][0]=7-boundsX;
@@ -299,19 +298,21 @@ public class Player extends Character {
      * There are 2 flying textures, one for left and one for right
      */
     public void enableFlying(){
+
+        Vector2 velocity = new Vector2();
         //Get left/right movement
         if (Gdx.input.isKeyPressed(Input.Keys.A)) {
-            velocityX = -(PLAYER_SPEED*PLAYER_FLIGHT_SPEED_MULTIPLIER);
+            velocity.x = -(PLAYER_SPEED*PLAYER_FLIGHT_SPEED_MULTIPLIER);
             facing=TextureSet.FACING_LEFT;
         } else if (Gdx.input.isKeyPressed(Input.Keys.D)) {
-            velocityX = (PLAYER_SPEED*PLAYER_FLIGHT_SPEED_MULTIPLIER);
+            velocity.x = (PLAYER_SPEED*PLAYER_FLIGHT_SPEED_MULTIPLIER);
             facing=TextureSet.FACING_RIGHT;
         }
         //Get up/down movement
         if (Gdx.input.isKeyPressed(Input.Keys.W)) {
-            velocityY = (PLAYER_SPEED*PLAYER_FLIGHT_SPEED_MULTIPLIER);
+            velocity.y = (PLAYER_SPEED*PLAYER_FLIGHT_SPEED_MULTIPLIER);
         } else if (Gdx.input.isKeyPressed(Input.Keys.S)) {
-            velocityY = -(PLAYER_SPEED*PLAYER_FLIGHT_SPEED_MULTIPLIER);
+            velocity.y = -(PLAYER_SPEED*PLAYER_FLIGHT_SPEED_MULTIPLIER);
         }
         accX=0;
         accY=0;
@@ -319,10 +320,7 @@ public class Player extends Character {
         isFlying = true;
 
         //Normalizes vectors to prevent diagonal movement being faster
-        if (velocityX != 0 && velocityY != 0) {
-            velocityX /= SQUAREROOT2;
-            velocityY /= SQUAREROOT2;
-        }
+        setVelocity(velocity.nor());
 
         Assets.flying.loop();
     }
@@ -419,7 +417,7 @@ public class Player extends Character {
      * @return the width of this Player
      */
     @Override
-    public int getWidth() {
+    public float getWidth() {
         return boundsW;
     }
 
@@ -427,7 +425,7 @@ public class Player extends Character {
      * @return the height of this Player
      */
     @Override
-    public int getHeight() {
+    public float getHeight() {
         return boundsH;
     }
 
@@ -496,7 +494,7 @@ public class Player extends Character {
             updateWalkingMovement();
 
         // Update animation state time.
-        if (velocityX != 0 || velocityY != 0 || isMeleeing) {
+        if (!getVelocity().isZero(0.1f) || isMeleeing) {
             stateTime += delta;
         } else {
             stateTime = 0;
@@ -512,7 +510,7 @@ public class Player extends Character {
                 disableFlying();
 
             //Update the flying direction texture using the x velocity
-            if(velocityX>=0){
+            if(getVelocity().x>=0){
                 facing=TextureSet.FACING_RIGHT;
             }
             else{
@@ -565,7 +563,7 @@ public class Player extends Character {
             if(isFlying){
                 disableFlying();
             }
-            if(flyingTimer >= PLAYER_MAX_FLIGHT_TIME && (velocityX != 0 || velocityY != 0))
+            if(flyingTimer >= PLAYER_MAX_FLIGHT_TIME && (!getVelocity().isZero(0.1f)))
                 enableFlying();
 
         }
@@ -577,28 +575,26 @@ public class Player extends Character {
      */
     private void updateWalkingMovement(){
         // Only allow movement via keys if not flying.
-            // Calculate speed at which to move the player.
-            float speed = PLAYER_SPEED * (parent.powerUpManager.getIsActive(PowerupManager.powerupTypes.SUPER_SPEED) ? PLAYER_SUPER_SPEED_MULTIPLIER : 1);
-            speed *= isOnWater() ? WATER_SPEED_MODIFIER : 1;
+        // Calculate speed at which to move the player.
+        float speed = PLAYER_SPEED * (parent.powerUpManager.getIsActive(PowerupManager.powerupTypes.SUPER_SPEED) ? PLAYER_SUPER_SPEED_MULTIPLIER : 1);
+        speed *= isOnWater() ? WATER_SPEED_MODIFIER : 1;
 
-            // Left/right movement.
-            if (Gdx.input.isKeyPressed(Input.Keys.A)) {
-                velocityX = -speed;
-            } else if (Gdx.input.isKeyPressed(Input.Keys.D)) {
-                velocityX = speed;
-            } else {
-                velocityX = 0;
-            }
+        Vector2 velocity = new Vector2();
+        // Left/right movement.
+        if (Gdx.input.isKeyPressed(Input.Keys.A)) {
+            velocity.x = -speed;
+        } else if (Gdx.input.isKeyPressed(Input.Keys.D)) {
+            velocity.x = speed;
+        }
 
-            // Left/right movement.
-            if (Gdx.input.isKeyPressed(Input.Keys.W)) {
-                velocityY = speed;
-            } else if (Gdx.input.isKeyPressed(Input.Keys.S)) {
-                velocityY = -speed;
-            } else {
-                velocityY = 0;
-            }
+        // Left/right movement.
+        if (Gdx.input.isKeyPressed(Input.Keys.W)) {
+            velocity.y = speed;
+        } else if (Gdx.input.isKeyPressed(Input.Keys.S)) {
+            velocity.y = -speed;
+        }
 
+        setVelocityClamped(velocity);
     }
 
     /**
@@ -646,19 +642,19 @@ public class Player extends Character {
             accY=MAX_ACC;
 
         //Update velocities with acceleration
-        velocityX+=accX;
-        velocityY+=accY;
-
-        //Limit The Maximum velocity
-        if(velocityX<-(PLAYER_SPEED*PLAYER_FLIGHT_SPEED_MULTIPLIER))
-            velocityX=-(PLAYER_SPEED*PLAYER_FLIGHT_SPEED_MULTIPLIER);
-        else if(velocityX>(PLAYER_SPEED*PLAYER_FLIGHT_SPEED_MULTIPLIER))
-            velocityX=(PLAYER_SPEED*PLAYER_FLIGHT_SPEED_MULTIPLIER);
-
-        if(velocityY<-(PLAYER_SPEED*PLAYER_FLIGHT_SPEED_MULTIPLIER))
-            velocityY=-(PLAYER_SPEED*PLAYER_FLIGHT_SPEED_MULTIPLIER);
-        else if(velocityY>(PLAYER_SPEED*PLAYER_FLIGHT_SPEED_MULTIPLIER))
-            velocityY=(PLAYER_SPEED*PLAYER_FLIGHT_SPEED_MULTIPLIER);
+//        velocityX+=accX;
+//        velocityY+=accY;
+//
+//        //Limit The Maximum velocity
+//        if(velocityX<-(PLAYER_SPEED*PLAYER_FLIGHT_SPEED_MULTIPLIER))
+//            velocityX=-(PLAYER_SPEED*PLAYER_FLIGHT_SPEED_MULTIPLIER);
+//        else if(velocityX>(PLAYER_SPEED*PLAYER_FLIGHT_SPEED_MULTIPLIER))
+//            velocityX=(PLAYER_SPEED*PLAYER_FLIGHT_SPEED_MULTIPLIER);
+//
+//        if(velocityY<-(PLAYER_SPEED*PLAYER_FLIGHT_SPEED_MULTIPLIER))
+//            velocityY=-(PLAYER_SPEED*PLAYER_FLIGHT_SPEED_MULTIPLIER);
+//        else if(velocityY>(PLAYER_SPEED*PLAYER_FLIGHT_SPEED_MULTIPLIER))
+//            velocityY=(PLAYER_SPEED*PLAYER_FLIGHT_SPEED_MULTIPLIER);
     }
 
     /**
@@ -671,15 +667,15 @@ public class Player extends Character {
         // Use the right texture set.
         TextureSet textureSet = isOnWater() ? Assets.playerSwimming : Assets.playerNormal;
 
-        spriteBatch.draw(Assets.shadow2, x-2, y-6);//Draw the shadow under the player
+        spriteBatch.draw(Assets.shadow2, getX()-2, getY()-6);//Draw the shadow under the player
         if(isFlying)
             spriteBatch.draw(Assets.playerFlying.getTexture(facing, 0), x - getBoundsX()-18, y - getBoundsY()+10);
         else {
             if(!isDamageFrames || isDamageFrames && damageFramesFrame)
                 if(isMeleeing)
-                    spriteBatch.draw(Assets.playerMelee.getTexture(facing, stateTime), x - getBoundsX()-16, y - getBoundsY());
+                    spriteBatch.draw(Assets.playerMelee.getTexture(facing, stateTime), getX() - getBoundsX()-16, getY() - getBoundsY());
                 else
-                    spriteBatch.draw(textureSet.getTexture(facing, stateTime), x - getBoundsX(), y - getBoundsY());
+                    spriteBatch.draw(textureSet.getTexture(facing, stateTime), getX() - getBoundsX(), getY() - getBoundsY());
         }
         damageFramesFrame=!damageFramesFrame;
     }
@@ -689,22 +685,21 @@ public class Player extends Character {
      * Available upgrades (upgrades are persistent).
      */
     public enum Upgrade {
-        NONE,
-        GUN;
+        NONE(null),
+        GUN(Assets.floorItemGun);
+
+        public final TextureRegion texture;
+        Upgrade(TextureRegion texture){
+            this.texture = texture;
+        }
 
         /**
          * Gets a texture for this upgrade's floor item.
          *
-         * @param upgrade the upgrade
          * @return the texture for the floor item
          */
-        public static TextureRegion getTextureForUpgrade(Upgrade upgrade) {
-            switch (upgrade) {
-                case GUN:
-                    return Assets.floorItemGun;
-                default:
-                    return null;
-            }
+        public TextureRegion getTextureForUpgrade() {
+            return this.texture;
         }
     }
 
@@ -742,16 +737,16 @@ public class Player extends Character {
          * Returns the height of the rectangle
          * @return rectangle height
          */
-        public int getHeight(){
-            return (int)height;
+        public float getHeight(){
+            return height;
         }
 
         /**
          * Returns the width of the rectangle
          * @return rectangle width
          */
-        public int getWidth(){
-            return (int)width;
+        public float getWidth(){
+            return width;
         }
 
         /**

@@ -13,7 +13,9 @@ import com.badlogic.gdx.maps.tiled.TiledMapTileSet;
 import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
 import com.badlogic.gdx.maps.tiled.tiles.AnimatedTiledMapTile;
 import com.badlogic.gdx.maps.tiled.tiles.StaticTiledMapTile;
+import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.Array;
 import com.superduckinvaders.game.assets.Assets;
@@ -87,6 +89,11 @@ public class GameScreen implements Screen {
      */
     private int level;
 
+    Box2DDebugRenderer debugRenderer;
+    Matrix4 debugMatrix;
+
+
+
 
     /**
      * Initialises this GameScreen for the specified round.
@@ -96,6 +103,8 @@ public class GameScreen implements Screen {
     public GameScreen(Round round, int level) {
         this.round = round;
         this.level = level;
+
+        debugRenderer = new Box2DDebugRenderer();
     }
 
     /**
@@ -188,7 +197,6 @@ public class GameScreen implements Screen {
 
         // Centre the camera on the player.
         updateCamera();
-        camera.update();
 
         spriteBatch.setProjectionMatrix(camera.combined);
         uiBatch2.setProjectionMatrix(camera.combined.cpy().scl(0.5f));
@@ -215,6 +223,9 @@ public class GameScreen implements Screen {
 
         mapRenderer.getBatch().end();
 
+        debugMatrix = new Matrix4(camera.combined);
+        debugMatrix.scale(PhysicsEntity.PIXELS_PER_METRE, PhysicsEntity.PIXELS_PER_METRE, 1f);
+        debugRenderer.render(round.world, debugMatrix);
         spriteBatch.begin();
         // Draw all entities.
         for (Entity entity : round.getEntities()) {
@@ -352,6 +363,8 @@ public class GameScreen implements Screen {
             camera.position.y = round.getMapHeight() - camera.viewportHeight / 2f;
         if (camera.position.y < camera.viewportHeight / 2f)
             camera.position.y = camera.viewportHeight / 2f;
+
+        camera.update();
     }
 
     /**

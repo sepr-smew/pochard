@@ -31,7 +31,7 @@ public class BossObjective extends Objective{
      * Sets the BossObjective to completed
      */
     public void setCompleted(){
-        status = OBJECTIVE_COMPLETED;
+        status = ObjectiveStatus.COMPLETED;
     }
 
     /**

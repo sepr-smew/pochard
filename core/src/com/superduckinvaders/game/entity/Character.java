@@ -1,12 +1,16 @@
 package com.superduckinvaders.game.entity;
 
+import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.physics.box2d.*;
 import com.superduckinvaders.game.Round;
 import com.superduckinvaders.game.assets.TextureSet;
+
+import java.util.ArrayList;
 
 /**
  * Represents a character in the game.
  */
-public abstract class Character extends Entity {
+public abstract class Character extends PhysicsEntity {
 
     /**
      * The direction the Character is facing.
@@ -28,6 +32,14 @@ public abstract class Character extends Entity {
      */
     protected int maximumHealth, currentHealth;
 
+    protected static float MELEE_RANGE = 30f;
+    protected static float MELEE_ATTACK_COOLDOWN = 0.2f;
+    protected float meleeAttackTimer = 0f;
+    protected short enemyBits = 0;
+    protected ArrayList<PhysicsEntity> enemiesInRange;
+
+    public int waterBlockCount = 0;
+
     /**
      * Initialises this Character.
      *
@@ -40,6 +52,28 @@ public abstract class Character extends Entity {
         super(parent, x, y);
 
         this.maximumHealth = this.currentHealth = maximumHealth;
+        enemiesInRange = new ArrayList<>();
+    }
+
+    @Override
+    public void createBody(BodyDef.BodyType bodyType, short categoryBits, short maskBits, short groupIndex, boolean isSensor){
+        super.createBody(bodyType, categoryBits, maskBits, groupIndex, isSensor);
+
+        CircleShape meleeSensorShape = new CircleShape();
+        meleeSensorShape.setRadius(MELEE_RANGE / PIXELS_PER_METRE);
+
+        FixtureDef meleeFixtureDef = new FixtureDef();
+        meleeFixtureDef.shape = meleeSensorShape;
+        meleeFixtureDef.isSensor = true;
+
+        meleeFixtureDef.filter.categoryBits = categoryBits;
+        meleeFixtureDef.filter.maskBits = enemyBits;
+        meleeFixtureDef.filter.groupIndex = SENSOR_GROUP;
+
+        Fixture meleeFixture = body.createFixture(meleeFixtureDef);
+        meleeFixture.setUserData(this);
+
+        meleeSensorShape.dispose();
     }
 
     /**
@@ -117,33 +151,81 @@ public abstract class Character extends Entity {
      * @return true if player is on water tile, otherwise false
      */
     protected boolean isOnWater(){
-        int tileX = ((int) x+getWidth()/2) / parent.getTileWidth();
-        int tileY = (int) y / parent.getTileHeight();
-        Object property = parent.getBaseLayer().getCell(tileX,tileY).getTile().getProperties().get("water");
-        return property!=null ? true : false;
+        return waterBlockCount > 0;
     }
-    /**
-     * Causes this Character to fire a projectile at the specified coordinates.
-     *
-     * @param targetx      the target x coordinate
-     * @param targety      the target y coordinate
-     * @param speed  how fast the projectile moves
-     * @param damage how much damage the projectile deals
-     */
-    public void fireAt(float targetx, float targety, int speed, int damage) {
-        parent.createProjectile(this.x + getWidth() / 2, this.y + getHeight() / 2, targetx, targety, speed, 0 ,0, damage, this);
+
+    public void fireAt(Vector2 direction, float projectileSpeed, int damage) {
+        Vector2 velocity = direction.setLength(projectileSpeed).add(getPhysicsVelocity());
+        velocity.setLength(Math.max(projectileSpeed, velocity.len()));
+        fireAt(Vector2.Zero.cpy(), velocity, damage);
+
+    }
+    public void fireAt(int startx, int starty, float targetx, float targety, float speed, int damage) {
+        Vector2 offset = new Vector2(startx, starty);
+        Vector2 startPos = offset.cpy().add(getPosition());
+        fireAt(offset, new Vector2(targetx, targety).sub(startPos).setLength(speed), damage);
+    }
+
+    public void fireAt(Vector2 offset, Vector2 velocity, int damage) {
+        parent.createProjectile(offset.add(getPosition()), velocity, damage, this);
+    }
+
+    @Override
+    public void beginSensorContact(PhysicsEntity other, Contact contact) {
+        super.beginSensorContact(other, contact);
+        if (other instanceof Character || (other instanceof Projectile && ((Projectile)other).getOwner() != this)) {
+            enemiesInRange.add(other);
+        }
+
+    }
+
+    @Override
+    public void endSensorContact(PhysicsEntity other, Contact contact) {
+        super.endSensorContact(other, contact);
+        if (enemiesInRange.contains(other)) {
+            enemiesInRange.remove(other);
+        }
+
     }
 
     /**
-     * Causes this Character to fire a projectile at the specified coordinates.
+     * Causes this Character to use a melee attack.
      *
-     * @param targetx      the target x coordinate
-     * @param targety      the target y coordinate
-     * @param speed  how fast the projectile moves
-     * @param damage how much damage the projectile deals
+     * @param direction the attack direction.
+     * @param damage how much damage the attack deals.
+     * @return whether the attack has occured.
      */
-    public void fireAt(int startx, int starty, float targetx, float targety, int speed, int damage) {
-        parent.createProjectile(this.x + startx, this.y + starty, targetx, targety, speed, 0, 0, damage, this);
+    protected boolean meleeAttack(Vector2 direction, int damage) {
+//        if (isStunned()) {
+//            return false;
+//        }
+//        if (meleeAttackTimer > MELEE_ATTACK_COOLDOWN && !enemiesInRange.isEmpty()){
+        if (meleeAttackTimer > MELEE_ATTACK_COOLDOWN){
+            if (enemiesInRange.isEmpty()) {
+                return false;
+            }
+            else {
+                meleeAttackTimer = 0f;
+            }
+
+            for (PhysicsEntity entity : enemiesInRange) {
+                if (directionTo(entity.getCentre()) == facing) {
+                    if (entity instanceof Character) {
+                        Character character = (Character) entity;
+                        character.damage(damage);
+                        character.setVelocity(direction.cpy().setLength(40f));
+                    } else if (entity instanceof Projectile){
+                        Projectile projectile = (Projectile) entity;
+                        float speed = projectile.getPhysicsVelocity().len();
+                        Vector2 newVelocity = vectorTo(projectile.getCentre()).setLength(speed*2);
+                        projectile.setOwner(this);
+                        projectile.setVelocity(newVelocity);
+                    }
+                }
+            }
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -190,38 +272,23 @@ public abstract class Character extends Entity {
      */
     @Override
     public void update(float delta) {
+
+        meleeAttackTimer += delta;
+
         // Update Character facing.
-        if (velocityX < 0) {
+        Vector2 velocity = getVelocity();
+        if (velocity.x < 0) {
             facing = TextureSet.FACING_LEFT;
-        } else if (velocityX > 0) {
+        } else if (velocity.x > 0) {
             facing = TextureSet.FACING_RIGHT;
         }
 
-        if (velocityY < 0) {
+        if (velocity.y < 0) {
             facing = TextureSet.FACING_FRONT;
-        } else if (velocityY > 0) {
+        }
+        else if (velocity.x > 0) {
             facing = TextureSet.FACING_BACK;
         }
-
-
-        float deltaX = velocityX * delta;
-        float deltaY = velocityY * delta;
-
-        //Check Collision if should
-        if(shouldCheckCollision) {
-
-            if (collidesX(deltaX)) {
-                deltaX = 0;
-            }
-
-            if (collidesY(deltaY)) {
-                deltaY = 0;
-            }
-        }
-
-        //Update position
-        x += (int) deltaX;
-        y += (int) deltaY;
 
         if (isDead()) {
             removed = true;

@@ -6,23 +6,27 @@ import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.maps.tiled.TiledMap;
 import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
 import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.math.Matrix4;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
+import com.badlogic.gdx.physics.box2d.World;
 import com.superduckinvaders.game.ai.BossAI;
-import com.superduckinvaders.game.ai.MovementAI;
+import com.superduckinvaders.game.ai.PathfindingAI;
 import com.superduckinvaders.game.ai.RangedAI;
 import com.superduckinvaders.game.assets.Assets;
 import com.superduckinvaders.game.assets.TextureSet;
 import com.superduckinvaders.game.entity.Character;
 import com.superduckinvaders.game.entity.*;
-import com.superduckinvaders.game.entity.item.Item;
-import com.superduckinvaders.game.entity.item.PowerupItem;
-import com.superduckinvaders.game.entity.item.PowerupManager;
-import com.superduckinvaders.game.entity.item.Upgrade;
+import com.superduckinvaders.game.entity.item.*;
 import com.superduckinvaders.game.objective.BossObjective;
 import com.superduckinvaders.game.objective.CollectObjective;
 import com.superduckinvaders.game.objective.KillObjective;
 import com.superduckinvaders.game.objective.Objective;
 import com.superduckinvaders.game.ui.FloatyNumbersManager;
+import com.superduckinvaders.game.util.Collision;
+import com.superduckinvaders.game.util.CustomContactListener;
+import com.superduckinvaders.game.util.RayCast;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -55,6 +59,7 @@ public class Round {
      * Map layer containing randomly-chosen layer of predefined obstacles.
      */
     private TiledMapTileLayer obstaclesLayer;
+    private TiledMapTileLayer collisionLayer;
 
     /**
      * The player.
@@ -81,19 +86,28 @@ public class Round {
      */
     public FloatyNumbersManager floatyNumbersManager = new FloatyNumbersManager();
 
+    public World world;
+
     /**
      * Initialises a new Round with the specified map.
      *
      * @param parent the game the round is associated with
      * @param map the Round's map
-     * @param mobs the number of random mobs to spawn.
+     * @param mobCount the number of random mobs to spawn.
      */
-    public Round(DuckGame parent, TiledMap map, int mobs, boolean isBoss) {
+    public Round(DuckGame parent, TiledMap map, int mobCount, boolean isBoss) {
         this.parent = parent;
         this.map = map;
 
+
+        world = new World(Vector2.Zero.cpy(), true);
+        world.setContactListener(new CustomContactListener());
+
         // Choose which obstacles to use.
         obstaclesLayer = chooseObstacles();
+        collisionLayer = getCollisionLayer();
+
+        createEnvironmentBodies();
 
         // Determine starting coordinates for player (0, 0 default).
         int startX = Integer.parseInt(map.getProperties().get("StartX", "0", String.class)) * getTileWidth();
@@ -105,13 +119,7 @@ public class Round {
         entities = new ArrayList<Entity>(128);
         entities.add(player);
 
-
-        //createUpgrade(startX + 40, startY, Player.Upgrade.GUN);
-//        createPowerup(startX + 60, startY, PowerupManager.powerupTypes.RATE_OF_FIRE, 60);
-//        createPowerup(startX + 80, startY, PowerupManager.powerupTypes.INVULNERABLE, 60);
-//        createPowerup(startX + 100, startY, PowerupManager.powerupTypes.SCORE_MULTIPLIER, 60);
-
-        spawnRandomMobs(mobs, 200, 200, 1000, 1000);
+        spawnRandomMobs(mobCount, 200, 200, 1000, 1000);
 
         //Set the objective to the boss objective if is a boss round, also spawn boss
         if(isBoss){
@@ -128,14 +136,14 @@ public class Round {
                     int objectiveX = Integer.parseInt(map.getProperties().get("ObjectiveX", "10", String.class)) * getTileWidth();
                     int objectiveY = Integer.parseInt(map.getProperties().get("ObjectiveY", "10", String.class)) * getTileHeight();
 
-                    Item objective = new Item(this, objectiveX, objectiveY, Assets.flag);
+                    Item objective = new CollectItem(this, objectiveX, objectiveY, Assets.flag);
                     setObjective(new CollectObjective(this, Objective.objectiveType.COLLECT, objective));
 
                     entities.add(objective);
                     break;
                 }
                 case KILL: {
-                    setObjective(new KillObjective(this, Objective.objectiveType.KILL, MathUtils.random(mobs / 2, mobs)));
+                    setObjective(new KillObjective(this, Objective.objectiveType.KILL, MathUtils.random(mobCount / 2, mobCount)));
                 }
             }
         }
@@ -162,6 +170,60 @@ public class Round {
         }
     }
 
+    private interface Constructor {
+        Entity construct(TiledMapTileLayer.Cell cell, float x, float y, float w, float h);
+    }
+
+    private void layerMap(TiledMapTileLayer layer, Constructor constructor){
+        if (layer == null){
+            return;
+        }
+
+        float tw = collisionLayer.getTileWidth();
+        float th = collisionLayer.getTileHeight();
+
+        for (int x = 0; x < layer.getWidth(); x++) {
+            for (int y = 0; y < layer.getHeight(); y++) {
+                TiledMapTileLayer.Cell cell = layer.getCell(x, y);
+                if (cell != null) {
+                    float tileX = x * tw;
+                    float tileY = y * th;
+                    constructor.construct(cell, tileX, tileY, tw, th);
+                }
+            }
+        }
+    }
+
+
+    private void createEnvironmentBodies() {
+        Constructor createObstacle = (TiledMapTileLayer.Cell cell, float x, float y, float w, float h) -> (new Obstacle(this, x, y, w, h));
+        Constructor createWater = (TiledMapTileLayer.Cell cell, float x, float y, float w, float h) -> {
+                    if (cell.getTile().getProperties().get("water") != null) {
+                        return new WaterEntity(this, x, y, w, h);
+                    }
+                    else {
+                        return null;
+                    }
+                };
+
+        layerMap(getCollisionLayer(), createObstacle);
+        layerMap(getObstaclesLayer(), createObstacle);
+        layerMap(getBaseLayer(),     createWater   );
+
+
+        float mapHeight = getMapHeight();
+        float mapWidth = getMapWidth();
+
+        //Assumes square tiles!
+        float tw = collisionLayer.getTileWidth();
+
+        // 4 map edge objects
+        new Obstacle(this, -tw,      -tw,       tw,          mapHeight+tw);
+        new Obstacle(this, -tw,      -tw,       mapWidth+tw, tw          );
+        new Obstacle(this, -tw,      mapHeight, mapWidth+tw, tw          );
+        new Obstacle(this, mapWidth, -tw,       tw,          mapHeight+tw);
+    }
+
     /**
      * Spawns a number of random mobs the specified distance from the player.
      * @param amount how many random mobs to spawn
@@ -170,20 +232,19 @@ public class Round {
      * @param maxX the maximum x distance from the player to spawn the mobs
      * @param maxY the maximum y distance from the player to spawn the mobs
      */
+
     private void spawnRandomMobs(int amount, int minX, int minY, int maxX, int maxY) {
-        while(amount > 0) {
-            int x = MathUtils.random(minX, maxX) * (MathUtils.randomBoolean() ? -1 : 1);
-            int y = MathUtils.random(minY, maxY) * (MathUtils.randomBoolean() ? -1 : 1);
-
-            Mob mob1 = new Mob(this, getPlayer().getX() + x, getPlayer().getY() + y, 100, 100, 15, Assets.badGuyNormal, Assets.badGuySwimming, new MovementAI(this, 48), Mob.MobType.MELEE);
-            //amount -= spawnMob(mob1) ? 1 : 0;
-            Mob mob2 = new Mob(this, getPlayer().getX() + x, getPlayer().getY() + y, 100, 100, 25, Assets.rangedBadGuy, Assets.rangedBadGuySwimming, new RangedAI(this, 300, 300), Mob.MobType.RANGED);
-            //amount -= spawnMob(mob2) ? 1 : 0;
-            if(MathUtils.random(0,3)==0)
-                amount -= spawnMob(mob2) ? 1 : 0;
-            else
-                amount -= spawnMob(mob1) ? 1 : 0;
-
+        for (int i = 0; i < amount;) {
+            int x = MathUtils.random(minX, maxX);
+            int y = MathUtils.random(minY, maxY);
+            if (!collidePoint(x, y))
+                if (MathUtils.random()>0.2) {
+                    entities.add(new Mob(this, getPlayer().getX() + x, getPlayer().getY() + y, 100, 100, 15, Assets.badGuyNormal, Assets.badGuySwimming, new PathfindingAI(this, 48), Mob.MobType.MELEE));
+                }
+                else {
+                    entities.add(new Mob(this, getPlayer().getX() + x, getPlayer().getY() + y, 100, 100, 25, Assets.rangedBadGuy, Assets.rangedBadGuySwimming, new RangedAI(this, 300, 300), Mob.MobType.RANGED));
+                }
+            i++;
         }
     }
 
@@ -268,17 +329,62 @@ public class Round {
     }
 
     /**
-     * Gets whether the map tile at the specified coordinates is blocked or not.
-     *
-     * @param x the x coordinate of the map tile
-     * @param y the y coordinate of the map tile
-     * @return whether or not the map tile is blocked
+     * Tests if a point resides inside a body
+     * @param x x
+     * @param y y
+     * @return whether the point is in the body
      */
-    public boolean isTileBlocked(int x, int y) {
-        int tileX = x / getTileWidth();
-        int tileY = y / getTileHeight();
-        
-        return getCollisionLayer().getCell(tileX, tileY) != null || (getObstaclesLayer() != null && getObstaclesLayer().getCell(tileX, tileY) != null);
+    public boolean collidePoint(float x, float y) {
+        return collidePoint(new Vector2(x, y));
+    }
+    public boolean collidePoint(Vector2 p) {
+        return collidePoint(p, PhysicsEntity.WORLD_BITS);
+    }
+    public boolean collidePoint(Vector2 p, short maskBits) {
+        p.scl(PhysicsEntity.METRES_PER_PIXEL);
+        Collision.Query q = new Collision.QueryPoint(world, p, maskBits);
+        return q.query();
+    }
+
+    public boolean collideArea(Vector2 pos, Vector2 size) {
+        return collideArea(pos, size, PhysicsEntity.WORLD_BITS);
+    }
+    public boolean collideArea(Vector2 pos, Vector2 size, short maskBits) {
+        pos.scl(PhysicsEntity.METRES_PER_PIXEL);
+        size.scl(PhysicsEntity.METRES_PER_PIXEL);
+        Collision.Query q = new Collision.QueryArea(world, pos, size, maskBits);
+        return q.query();
+    }
+
+    public boolean rayCast(Vector2 pos1, Vector2 pos2){
+        return rayCast(pos1, pos2, PhysicsEntity.WORLD_BITS);
+    }
+    public boolean rayCast(Vector2 pos1, Vector2 pos2, short maskBits) {
+        RayCast.RayCastCB r = new RayCast.RayCastCB(maskBits);
+        world.rayCast(
+                r,
+                pos1.cpy().scl(PhysicsEntity.METRES_PER_PIXEL),
+                pos2.cpy().scl(PhysicsEntity.METRES_PER_PIXEL)
+        );
+        return r.clear;
+    }
+
+    public boolean pathIsClear(Vector2 pos, Vector2 size, Vector2 target){
+        float width  = size.x;
+        float height = size.y;
+        Vector2[] corners = {new Vector2( width/2,  height/2),
+                new Vector2(-width/2,  height/2),
+                new Vector2(-width/2,  -height/2),
+                new Vector2(width/2,  -height/2)
+        };
+        boolean result = true;
+
+        for (Vector2 corner : corners){
+            result = result && rayCast(corner.cpy().add(pos), corner.cpy().add(target));
+
+        }
+
+        return result;
     }
 
     /**
@@ -345,18 +451,14 @@ public class Round {
     /**
      * Creates a new projectile and adds it to the list of entities.
      *
-     * @param x               the initial x coordinate
-     * @param y               the initial y coordinate
-     * @param targetX         the target x coordinate
-     * @param targetY         the target y coordinate
-     * @param speed           how fast the projectile moves
-     * @param velocityXOffset the offset to the initial X velocity
-     * @param velocityYOffset the offset to the initial Y velocity
      * @param damage          how much damage the projectile deals
      * @param owner           the owner of the projectile (i.e. the one who fired it)
      */
-    public void createProjectile(float x, float y, float targetX, float targetY, float speed, float velocityXOffset, float velocityYOffset, int damage, Entity owner) {
-        entities.add(new Projectile(this, x, y, targetX, targetY, speed, velocityXOffset, velocityYOffset, damage, owner));
+    public void createProjectile(Vector2 pos, Vector2 velocity, int damage, PhysicsEntity owner) {
+        entities.add(new Projectile(this, pos, velocity, damage, owner));
+    }
+    public void createProjectile(float x, float y, float dirX, float dirY, float speed, float velocityXOffset, float velocityYOffset, int damage, PhysicsEntity owner) {
+        createProjectile(new Vector2(x, y), new Vector2(dirX, dirY).setLength(speed).add(velocityXOffset, velocityYOffset), damage, owner);
         Assets.laser.play(0.1f);
     }
 
@@ -423,36 +525,6 @@ public class Round {
         return true;
     }
 
-    /**
-     * Spawns a mob somewhere on the map. Ensures it doesn't intersect anything and is on a spawn tile
-     * @param mob
-     * @return
-     */
-    public boolean spawnMob(Mob mob){
-        float x = mob.getX();
-        float y = mob.getY();
-        TextureSet textureSet = mob.getWalkingTextureSet();
-
-        // Check mob isn't out of bounds.
-        if (x < 0 || x > getMapWidth() - textureSet.getWidth() || y > getMapHeight() - textureSet.getHeight()) {
-            return false;
-        }
-
-        // Check mob doesn't intersect anything.
-        for (Entity entity : entities) {
-            if (entity instanceof Character
-                    && (mob.intersects(entity.getX(), entity.getY(), entity.getWidth(), entity.getHeight()) || mob.collidesX(0) || mob.collidesY(0))) {
-                return false;
-            }
-        }
-
-        if (getSpawnLayer().getCell((int)x / getTileWidth(), (int)y / getTileHeight()) == null){
-            return false;
-        }
-
-        entities.add(mob);
-        return true;
-    }
 
     /**
      * Updates all entities in this Round.
@@ -460,25 +532,14 @@ public class Round {
      * @param delta the time elapsed since the last update
      */
     public void update(float delta) {
+        world.step(delta, 6, 2);
 
         powerUpManager.update(delta);
         floatyNumbersManager.update(delta);
 
-        if (objective != null) {
-            objective.update(delta);
-
-            if (objective.getStatus() == Objective.OBJECTIVE_COMPLETED) {
-                parent.showWinScreen(player.getScore());
-            } else if (player.isDead()) {
-                parent.showLoseScreen();
-            }
-        }
-
         //int updateNumber =0, totalNumber=entities.size(), numMobs=0;
         for (int i = 0; i < entities.size(); i++) {
             Entity entity = entities.get(i);
-/*            if(entity instanceof Mob)
-                numMobs++;*/
 
             if (entity.isRemoved()) {
                 if (entity instanceof Mob && ((Mob) entity).isDead()) {
@@ -490,18 +551,27 @@ public class Round {
                     }
 
                 }
-
-                entities.remove(i);
+                entity.dispose();
+                entities.remove(i--);
             } else if ((entity.distanceTo(player.getX(), player.getY()) < UPDATE_DISTANCE_X)&&(entity.distanceTo(player.getX(), player.getY()) < UPDATE_DISTANCE_Y)){
                 // Don't bother updating entities that aren't on screen.
                 entity.update(delta);
-                //updateNumber++;
+            }
+        }
+
+        if (objective != null) {
+            objective.update(delta);
+
+            if (objective.getStatus() == Objective.ObjectiveStatus.COMPLETED) {
+                parent.showWinScreen(player.getScore());
+            } else if (player.isDead()) {
+                parent.showLoseScreen();
             }
         }
 
         if (Gdx.input.isKeyJustPressed(Input.Keys.P)) {
             for (int x=0;x<1000; x++) {
-                createProjectile(MathUtils.random(300, 1500), MathUtils.random(300, 1500), MathUtils.random(300, 1500), MathUtils.random(300, 1500), 500, 0, 0, 0, player);
+                createProjectile(MathUtils.random(300, 1500), MathUtils.random(300, 1500), MathUtils.random(-1f, 1f), MathUtils.random(-1f, 1f), 1000, 0, 0, 0, player);
             }
         }
         //System.out.println("total:"+totalNumber+" updated:"+updateNumber+" numMobs:"+numMobs);

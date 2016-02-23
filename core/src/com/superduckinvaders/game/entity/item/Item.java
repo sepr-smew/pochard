@@ -6,8 +6,9 @@ import com.badlogic.gdx.math.MathUtils;
 import com.superduckinvaders.game.Round;
 import com.superduckinvaders.game.assets.Assets;
 import com.superduckinvaders.game.entity.Entity;
+import com.superduckinvaders.game.entity.PhysicsEntity;
 
-public class Item extends Entity {
+public class Item extends PhysicsEntity {
 
     /**
      * The texture for this Item.
@@ -30,13 +31,14 @@ public class Item extends Entity {
         super(parent, x, y);
         runningTime = 0;
         this.texture = texture;
+        createStaticBody(ITEM_BITS, PLAYER_BITS, NO_GROUP, true);
     }
 
     /**
      * @return The width of the item
      */
     @Override
-    public int getWidth() {
+    public float getWidth() {
         return texture.getRegionWidth();
     }
 
@@ -44,7 +46,7 @@ public class Item extends Entity {
      * @return The height of the item
      */
     @Override
-    public int getHeight() {
+    public float getHeight() {
         return texture.getRegionHeight();
     }
 
@@ -66,7 +68,7 @@ public class Item extends Entity {
     public void render(SpriteBatch spriteBatch) {
         //System.out.println("RENDERING? " + runningTime);
         spriteBatch.draw(Assets.shadow, x-8, y-4);
-        spriteBatch.draw(texture, x, y + (int) (MathUtils.sin(runningTime*2)*6) + 6);
+        spriteBatch.draw(texture, getX(), getY() + (int) (MathUtils.sin(runningTime*2)*6) + 6);
     }
 
 }

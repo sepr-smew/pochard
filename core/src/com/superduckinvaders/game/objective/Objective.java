@@ -7,20 +7,12 @@ import com.superduckinvaders.game.Round;
  */
 public abstract class Objective {
 
-    /**
-     * Indicates that the objective hasn't yet been completed.
-     */
-    public static final int OBJECTIVE_ONGOING = 0;
 
-    /**
-     * Indicates that the objective has been completed.
-     */
-    public static final int OBJECTIVE_COMPLETED = 1;
-
-    /**
-     * Indicates that the objective has been failed.
-     */
-    public static final int OBJECTIVE_FAILED = 2;
+    public enum ObjectiveStatus {
+        ONGOING,
+        COMPLETED,
+        FAILED
+    }
 
     /**
      * The round that this Objective belongs to.
@@ -30,7 +22,7 @@ public abstract class Objective {
     /**
      * The current status of this Objective.
      */
-    protected int status = OBJECTIVE_ONGOING;
+    protected ObjectiveStatus status = ObjectiveStatus.ONGOING;
 
     /**
      * The type of the objective
@@ -52,7 +44,7 @@ public abstract class Objective {
      *
      * @return the current status of the Objective (one of the OBJECTIVE_ constants);
      */
-    public int getStatus() {
+    public ObjectiveStatus getStatus() {
         return status;
     }
 

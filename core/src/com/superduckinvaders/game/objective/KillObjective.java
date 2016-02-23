@@ -46,6 +46,6 @@ public class KillObjective extends Objective {
     @Override
     public void update(float delta) {
         if(killCounter<=0)
-            status = OBJECTIVE_COMPLETED;
+            status = ObjectiveStatus.COMPLETED;
     }
 }
