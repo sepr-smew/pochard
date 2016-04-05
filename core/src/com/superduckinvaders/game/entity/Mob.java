@@ -14,12 +14,12 @@ import com.superduckinvaders.game.objective.BossObjective;
 import com.superduckinvaders.game.objective.KillObjective;
 import com.superduckinvaders.game.objective.Objective;
 
-public class Mob extends Character {
+public abstract class Mob extends Character {
 
     /**
      * The texture set to use for this Mob.
      */
-    private TextureSet walkingTextureSet, swimmingTextureSet;
+    protected TextureSet walkingTextureSet, swimmingTextureSet;
     
     /**
      * AI class for the mob
@@ -37,11 +37,6 @@ public class Mob extends Character {
     private int score;
 
     /**
-     * The type of mob this is
-     */
-    private MobType type;
-
-    /**
      * speed of the mob in pixels per second
      */
     private int speed;
@@ -57,9 +52,8 @@ public class Mob extends Character {
      * @param walkingTextureSet The textureset of the mob when on land
      * @param swimmingTextureSet The textureset of the mob when on water
      * @param ai The ai for the mob
-     * @param type The type of the mob
      */
-    public Mob(Round parent, float x, float y, int health, int speed, int score, TextureSet walkingTextureSet, TextureSet swimmingTextureSet, AI ai, MobType type) {
+    public Mob(Round parent, float x, float y, int health, int speed, int score, TextureSet walkingTextureSet, TextureSet swimmingTextureSet, AI ai) {
         super(parent, x, y, health);
 
         this.walkingTextureSet = walkingTextureSet;
@@ -67,12 +61,6 @@ public class Mob extends Character {
         this.speed = speed;
         this.score = score;
         this.ai = ai;
-
-        this.type = type;
-
-        if(type==MobType.BOSS) {
-            disableCollision();
-        }
 
         this.enemyBits = PLAYER_BITS;
 
@@ -149,11 +137,28 @@ public class Mob extends Character {
         return score;
     }
 
-    /**
-     * @return The type of the mob
-     */
-    public MobType getType() {
-        return type;
+    protected void onDeath(){
+        float random = MathUtils.random();
+        PowerupManager.powerupTypes powerup = null;
+
+        if (random < 0.05) {
+            powerup = PowerupManager.powerupTypes.SCORE_MULTIPLIER;
+        } else if (random >= 0.05 && random < 0.1) {
+            powerup = PowerupManager.powerupTypes.INVULNERABLE;
+        } else if (random >= 0.1 && random < 0.15) {
+            powerup = PowerupManager.powerupTypes.SUPER_SPEED;
+        } else if (random >= 0.15 && random < 0.2) {
+            powerup = PowerupManager.powerupTypes.RATE_OF_FIRE;
+        }
+
+        if (powerup != null) {
+            parent.createPowerup(getX(), getY(), powerup, 10);
+        }
+
+        if (parent.getObjective().getObjectiveType() == Objective.objectiveType.KILL) {
+            KillObjective objective = (KillObjective) parent.getObjective();
+            objective.decrementKills();
+        }
     }
 
     /**
@@ -166,32 +171,7 @@ public class Mob extends Character {
 
         // Chance of spawning a random powerup.
         if (isDead()) {
-            float random = MathUtils.random();
-            PowerupManager.powerupTypes powerup = null;
-
-            if (random < 0.05) {
-                powerup = PowerupManager.powerupTypes.SCORE_MULTIPLIER;
-            } else if (random >= 0.05 && random < 0.1) {
-                powerup = PowerupManager.powerupTypes.INVULNERABLE;
-            } else if (random >= 0.1 && random < 0.15) {
-                powerup = PowerupManager.powerupTypes.SUPER_SPEED;
-            } else if (random >= 0.15 && random < 0.2) {
-                powerup = PowerupManager.powerupTypes.RATE_OF_FIRE;
-            }
-
-            if (powerup != null) {
-                parent.createPowerup(getX(), getY(), powerup, 10);
-            }
-
-            if(type==MobType.BOSS) {
-                ((BossObjective)parent.getObjective()).setCompleted();
-            }
-            else{
-                if (parent.getObjective().getObjectiveType() == Objective.objectiveType.KILL) {
-                    KillObjective objective = (KillObjective) parent.getObjective();
-                    objective.decrementKills();
-                }
-            }
+            onDeath();
         }
 
         // Update animation state time.
@@ -219,42 +199,5 @@ public class Mob extends Character {
      */
     @Override
     public void render(SpriteBatch spriteBatch) {
-
-        float x = getX();
-        float y = getY();
-
-        if(type==MobType.RANGED) {
-            if(isOnWater()){
-                spriteBatch.draw(Assets.shadow2, x, y+3);
-                spriteBatch.draw(swimmingTextureSet.getTexture(facing, stateTime), x, y );
-            }
-            else{
-                spriteBatch.draw(Assets.shadow2, x, y+3);
-                spriteBatch.draw(walkingTextureSet.getTexture(facing, stateTime), x, y );
-            }
-
-
-        }
-        else if(type==MobType.MELEE){
-            if(isOnWater()) {
-                spriteBatch.draw(Assets.shadow, x-5, y);
-                spriteBatch.draw(swimmingTextureSet.getTexture(facing, stateTime), x, y);
-            }
-            else {
-                spriteBatch.draw(Assets.shadow, x - 5, y - 5);
-                spriteBatch.draw(walkingTextureSet.getTexture(facing, stateTime), x, y);
-            }
-        }
-        else if(type==MobType.BOSS){
-            spriteBatch.draw(Assets.bossShadow, x-10, y-20);
-            spriteBatch.draw(walkingTextureSet.getTexture(facing, stateTime), x, y);
-        }
-    }
-
-    /**
-     * Enum of mob types
-     */
-    public enum MobType{
-        MELEE,RANGED,BOSS
     }
 }

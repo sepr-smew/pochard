@@ -241,15 +241,15 @@ public class GameScreen implements Screen {
         //Render health bars above enemies
         for (Entity entity : round.getEntities()) {
             if (entity instanceof Mob) {
-                Mob chars = (Mob) entity;
-                float offsetX = chars.getX() * 2 - chars.getWidth() / 2;
+                Mob mob = (Mob) entity;
+                float offsetX = mob.getX() * 2 - mob.getWidth() / 2;
 
-                float offsetY = chars.getY() * 2 + chars.getHeight() * 2;
+                float offsetY = mob.getY() * 2 + mob.getHeight() * 2;
 
-                if (chars.getType() == Mob.MobType.BOSS) {
+                if (mob instanceof BossMob) {
                     offsetX += 40;
                     offsetY += 15;
-                } else if (chars.getType() == Mob.MobType.RANGED) {
+                } else if (mob instanceof  RangedMob) {
                     offsetX -= 5;
                     offsetY += 30;
                 } else {
@@ -258,7 +258,7 @@ public class GameScreen implements Screen {
                 }
 
                 uiBatch2.draw(Assets.healthEmpty, offsetX, offsetY);
-                Assets.healthFull.setRegionWidth((int) Math.max(0, ((float) chars.getCurrentHealth() / chars.getMaximumHealth()) * 100));
+                Assets.healthFull.setRegionWidth((int) Math.max(0, ((float) mob.getCurrentHealth() / mob.getMaximumHealth()) * 100));
                 uiBatch2.draw(Assets.healthFull, offsetX, offsetY);
             }
         }

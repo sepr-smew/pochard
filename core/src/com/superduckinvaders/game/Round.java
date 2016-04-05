@@ -134,7 +134,7 @@ public class Round {
 
         //Set the objective to the boss objective if is a boss round, also spawn boss
         if(isBoss){
-            addEntity(new Mob(this, 50*16, 50*16, 2500, 100, 5000, Assets.bossBadGuy, Assets.bossBadGuy, new BossAI(this), Mob.MobType.BOSS));
+            addEntity(new BossMob(this, 50*16, 50*16, 2500, 100, 5000));
             setObjective(new BossObjective(this, Objective.objectiveType.BOSS));
         }
         else {
@@ -240,10 +240,10 @@ public class Round {
             int y = MathUtils.random(minY, maxY);
             if (!collidePoint(x, y))
                 if (MathUtils.random()>0.2) {
-                    entities.add(new Mob(this, getPlayer().getX() + x, getPlayer().getY() + y, 100, 100, 15, Assets.badGuyNormal, Assets.badGuySwimming, new ZombieAI(this, 40), Mob.MobType.MELEE));
+                    entities.add(new MeleeMob(this, getPlayer().getX() + x, getPlayer().getY() + y, 100, 100, 15));
                 }
                 else {
-                    entities.add(new Mob(this, getPlayer().getX() + x, getPlayer().getY() + y, 100, 100, 25, Assets.rangedBadGuy, Assets.rangedBadGuySwimming, new RangedAI(this, 300, 300), Mob.MobType.RANGED));
+                    entities.add(new RangedMob(this, getPlayer().getX() + x, getPlayer().getY() + y, 100, 100, 25));
                 }
             i++;
         }

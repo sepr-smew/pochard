@@ -442,17 +442,15 @@ public class Player extends Character {
             if (attackTimer >= PLAYER_ATTACK_DELAY * (parent.powerUpManager.getIsActive(PowerupManager.powerupTypes.RATE_OF_FIRE) ? PLAYER_ATTACK_DELAY_MULTIPLIER : 1)) {
                 attackTimer = 0;
 
-                    //Update aim direction
-                    Vector3 target3 = parent.unproject(Gdx.input.getX(), Gdx.input.getY());
-                    Vector2 target = new Vector2(target3.x, target3.y);
+                //Update aim direction
+                Vector3 target3 = parent.unproject(Gdx.input.getX(), Gdx.input.getY());
+                Vector2 target = new Vector2(target3.x, target3.y);
 
-                    //Alter starting point based on if on water or not
-                    if(isOnWater()){
-                        fireAt(getPosition().add(projectileDrawPointSwimming[facing.index()]),vectorTo(target).setLength(500), 50);
-                    }
-                    else {
-                        fireAt(getPosition().cpy().add(projectileDrawPoint[facing.index()]), vectorTo(target).setLength(500), 50);
-                    }
+                //Alter starting point based on if on water or not
+                Vector2 origin = (isOnWater() ? projectileDrawPointSwimming : projectileDrawPoint)[facing.index()];
+                Vector2 velocity = target.sub(origin).setLength(500);
+
+                fireAt(origin, velocity, 50);
             }
         }
 
