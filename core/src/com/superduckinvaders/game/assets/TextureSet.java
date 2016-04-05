@@ -13,6 +13,27 @@ public final class TextureSet {
      */
     public static final int FACING_FRONT = 0, FACING_FRONT_LEFT = 1, FACING_LEFT = 2, FACING_BACK_LEFT = 3,
                             FACING_BACK = 4, FACING_BACK_RIGHT = 5, FACING_RIGHT = 6, FACING_FRONT_RIGHT = 7;
+    
+    public enum Facing {
+        FRONT       (0),
+        FRONT_LEFT  (1),
+        LEFT        (2),
+        BACK_LEFT   (3),
+        BACK        (4),
+        BACK_RIGHT  (5),
+        RIGHT       (6),
+        FRONT_RIGHT (7);
+
+        private int index;
+
+        Facing(int index){
+            this.index = index;
+        }
+
+        public int index(){
+            return index;
+        }
+    }
 
     /**
      * Textures to use when the character isn't moving.
@@ -53,22 +74,15 @@ public final class TextureSet {
      * @param back        the backward facing texture
      * @param left        the left facing texture
      * @param right       the right facing texture
-     * @param movingFront the moving forward animation
-     * @param movingBack  the moving backward animation
-     * @param movingLeft  the moving left animation
-     * @param movingRight the moving right animation
+     * @param walkingFront the walking forward animation
+     * @param walkingBack  the walking backward animation
+     * @param walkingLeft  the walking left animation
+     * @param walkingRight the walking right animation
      */
     public TextureSet(TextureRegion front, TextureRegion back, TextureRegion left, TextureRegion right,
-                      Animation movingFront, Animation movingBack, Animation movingLeft, Animation movingRight) {
-        idleTextures[FACING_FRONT] = front;
-        idleTextures[FACING_BACK] = back;
-        idleTextures[FACING_LEFT] = left;
-        idleTextures[FACING_RIGHT] = right;
-
-        movementAnimations[FACING_FRONT] = movingFront;
-        movementAnimations[FACING_BACK] = movingBack;
-        movementAnimations[FACING_LEFT] = movingLeft;
-        movementAnimations[FACING_RIGHT] = movingRight;
+                      Animation walkingFront, Animation walkingBack, Animation walkingLeft, Animation walkingRight) {
+        this(front, null, left, null, back, null, right, null,
+                walkingFront, null, walkingBack, null, walkingLeft, null, walkingRight, null);
     }
 
     /**
@@ -90,19 +104,8 @@ public final class TextureSet {
     public TextureSet(TextureRegion front, TextureRegion frontLeft, TextureRegion left, TextureRegion backLeft,
                       TextureRegion back, TextureRegion backRight, TextureRegion right, TextureRegion frontRight,
                       Animation walkingFront, Animation walkingBack, Animation walkingLeft, Animation walkingRight) {
-        idleTextures[0] = front;
-        idleTextures[1] = frontLeft;
-        idleTextures[2] = left;
-        idleTextures[3] = backLeft;
-        idleTextures[4] = back;
-        idleTextures[5] = backRight;
-        idleTextures[6] = right;
-        idleTextures[7] = frontRight;
-
-        movementAnimations[FACING_FRONT] = walkingFront;
-        movementAnimations[FACING_BACK] = walkingBack;
-        movementAnimations[FACING_LEFT] = walkingLeft;
-        movementAnimations[FACING_RIGHT] = walkingRight;
+        this(front, frontLeft, left, backLeft, back, backRight, right, frontRight,
+                walkingFront, null, walkingBack, null, walkingLeft, null, walkingRight, null);
     }
 
     /**
@@ -127,24 +130,27 @@ public final class TextureSet {
      */
     public TextureSet(TextureRegion front, TextureRegion frontLeft, TextureRegion left, TextureRegion backLeft, TextureRegion back, TextureRegion backRight, TextureRegion right, TextureRegion frontRight,
                       Animation walkingFront, Animation walkingFrontLeft, Animation walkingLeft, Animation walkingBackLeft, Animation walkingBack, Animation walkingBackRight, Animation walkingRight, Animation walkingFrontRight) {
-        idleTextures[0] = front;
-        idleTextures[1] = frontLeft;
-        idleTextures[2] = left;
-        idleTextures[3] = backLeft;
-        idleTextures[4] = back;
-        idleTextures[5] = backRight;
-        idleTextures[6] = right;
-        idleTextures[7] = frontRight;
-
-        movementAnimations[FACING_FRONT] = walkingFront;
-        movementAnimations[FACING_FRONT_LEFT] = walkingFrontLeft;
-        movementAnimations[FACING_LEFT] = walkingLeft;
-        movementAnimations[FACING_BACK_LEFT] = walkingBackLeft;
-        movementAnimations[FACING_BACK] = walkingBack;
-        movementAnimations[FACING_BACK_RIGHT] = walkingBackRight;
-        movementAnimations[FACING_RIGHT] = walkingRight;
-        movementAnimations[FACING_FRONT_RIGHT] = walkingFrontRight;
-
+        idleTextures = new TextureRegion[]{
+                front,
+                frontLeft,
+                left,
+                backLeft,
+                back,
+                backRight,
+                right,
+                frontRight
+        };
+        
+        movementAnimations = new Animation[]{
+                walkingFront,
+                walkingFrontLeft,
+                walkingLeft,
+                walkingBackLeft,
+                walkingBack,
+                walkingBackRight,
+                walkingRight,
+                walkingFrontRight
+        };
     }
 
     /**
@@ -172,11 +178,11 @@ public final class TextureSet {
      * @param stateTime the state time
      * @return the appropriate texture
      */
-    public TextureRegion getTexture(int facing, float stateTime) {
+    public TextureRegion getTexture(Facing facing, float stateTime) {
         if (stateTime > 0) {
-            return movementAnimations[facing].getKeyFrame(stateTime, true);
+            return movementAnimations[facing.index()].getKeyFrame(stateTime, true);
         } else {
-            return idleTextures[facing];
+            return idleTextures[facing.index()];
         }
     }
 
@@ -186,24 +192,24 @@ public final class TextureSet {
      * @param stateTime The statetime to check if finished for
      * @return true if animation has finished, false otherwise
      */
-    public boolean isAnimationFinished(int facing, float stateTime){
-        return movementAnimations[facing].isAnimationFinished(stateTime);
+    public boolean isAnimationFinished(Facing facing, float stateTime){
+        return movementAnimations[facing.index()].isAnimationFinished(stateTime);
     }
 
     /**
      * @param facing the direction to receive result for
      * @return the duration of the animation for the given direction
      */
-    public float getAnimationDuration(int facing){
-        return movementAnimations[facing].getAnimationDuration();
+    public float getAnimationDuration(Facing facing){
+        return movementAnimations[facing.index()].getAnimationDuration();
     }
 
     /**
      * @param facing the direction to receive result for
      * @return the duration of each frame for the given direction
      */
-    public float getFrameDuration(int facing){
-        return movementAnimations[facing].getFrameDuration();
+    public float getFrameDuration(Facing facing){
+        return movementAnimations[facing.index()].getFrameDuration();
     }
 
 }

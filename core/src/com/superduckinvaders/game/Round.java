@@ -14,6 +14,7 @@ import com.badlogic.gdx.physics.box2d.World;
 import com.superduckinvaders.game.ai.BossAI;
 import com.superduckinvaders.game.ai.PathfindingAI;
 import com.superduckinvaders.game.ai.RangedAI;
+import com.superduckinvaders.game.ai.ZombieAI;
 import com.superduckinvaders.game.assets.Assets;
 import com.superduckinvaders.game.assets.TextureSet;
 import com.superduckinvaders.game.entity.Character;
@@ -35,6 +36,16 @@ import java.util.List;
  * Represents a round of the game played on one level with a single objective.
  */
 public class Round {
+
+    private Constructor createObstacle = (TiledMapTileLayer.Cell cell, float x, float y, float w, float h) -> (new Obstacle(this, x, y, w, h));
+    private Constructor createWater = (TiledMapTileLayer.Cell cell, float x, float y, float w, float h) -> {
+        if (cell.getTile().getProperties().get("water") != null) {
+            return new WaterEntity(this, x, y, w, h);
+        }
+        else {
+            return null;
+        }
+    };
 
     /**
      * How near entities must be to the player to get updated in the game loop.
@@ -119,7 +130,7 @@ public class Round {
         entities = new ArrayList<Entity>(128);
         entities.add(player);
 
-        spawnRandomMobs(mobCount, 200, 200, 1000, 1000);
+        spawnRandomMobs(mobCount, 0, 0, getMapWidth(), getMapHeight());
 
         //Set the objective to the boss objective if is a boss round, also spawn boss
         if(isBoss){
@@ -196,16 +207,6 @@ public class Round {
 
 
     private void createEnvironmentBodies() {
-        Constructor createObstacle = (TiledMapTileLayer.Cell cell, float x, float y, float w, float h) -> (new Obstacle(this, x, y, w, h));
-        Constructor createWater = (TiledMapTileLayer.Cell cell, float x, float y, float w, float h) -> {
-                    if (cell.getTile().getProperties().get("water") != null) {
-                        return new WaterEntity(this, x, y, w, h);
-                    }
-                    else {
-                        return null;
-                    }
-                };
-
         layerMap(getCollisionLayer(), createObstacle);
         layerMap(getObstaclesLayer(), createObstacle);
         layerMap(getBaseLayer(),     createWater   );
@@ -218,10 +219,10 @@ public class Round {
         float tw = collisionLayer.getTileWidth();
 
         // 4 map edge objects
-        new Obstacle(this, -tw,      -tw,       tw,          mapHeight+tw);
-        new Obstacle(this, -tw,      -tw,       mapWidth+tw, tw          );
-        new Obstacle(this, -tw,      mapHeight, mapWidth+tw, tw          );
-        new Obstacle(this, mapWidth, -tw,       tw,          mapHeight+tw);
+        new Obstacle(this, -tw,      -tw,       tw,          mapHeight+tw, PhysicsEntity.BOUNDS_BITS);
+        new Obstacle(this, -tw,      -tw,       mapWidth+tw, tw,           PhysicsEntity.BOUNDS_BITS);
+        new Obstacle(this, -tw,      mapHeight, mapWidth+tw, tw,           PhysicsEntity.BOUNDS_BITS);
+        new Obstacle(this, mapWidth, -tw,       tw,          mapHeight+tw, PhysicsEntity.BOUNDS_BITS);
     }
 
     /**
@@ -239,7 +240,7 @@ public class Round {
             int y = MathUtils.random(minY, maxY);
             if (!collidePoint(x, y))
                 if (MathUtils.random()>0.2) {
-                    entities.add(new Mob(this, getPlayer().getX() + x, getPlayer().getY() + y, 100, 100, 15, Assets.badGuyNormal, Assets.badGuySwimming, new PathfindingAI(this, 48), Mob.MobType.MELEE));
+                    entities.add(new Mob(this, getPlayer().getX() + x, getPlayer().getY() + y, 100, 100, 15, Assets.badGuyNormal, Assets.badGuySwimming, new ZombieAI(this, 40), Mob.MobType.MELEE));
                 }
                 else {
                     entities.add(new Mob(this, getPlayer().getX() + x, getPlayer().getY() + y, 100, 100, 25, Assets.rangedBadGuy, Assets.rangedBadGuySwimming, new RangedAI(this, 300, 300), Mob.MobType.RANGED));
@@ -495,34 +496,6 @@ public class Round {
      */
     public void createUpgrade(int x, int y, Player.Upgrade upgrade) {
         entities.add(new Upgrade(this, x, y, upgrade));
-    }
-
-    /**
-     * Creates a mob and adds it to the list of entities, but only if it doesn't intersect with another character.
-     * @param x the initial x coordinate
-     * @param y the initial y coordinate
-     * @param health the initial health of the mob
-     * @param textureSet the texture set to use
-     * @param speed how fast the mob moves in pixels per second
-     * @return true if the mob was successfully added, false if there was an intersection and the mob wasn't added
-     */
-    public boolean createMob(Mob mob, float x, float y, int health, TextureSet textureSet, int speed) {
-
-        // Check mob isn't out of bounds.
-        if (x < 0 || x > getMapWidth() - textureSet.getWidth() || y > getMapHeight() - textureSet.getHeight()) {
-            return false;
-        }
-
-        // Check mob doesn't intersect anything.
-        for (Entity entity : entities) {
-            if (entity instanceof Character
-                    && (mob.intersects(entity.getX(), entity.getY(), entity.getWidth(), entity.getHeight()) || mob.collidesX(0) || mob.collidesY(0))) {
-                return false;
-            }
-        }
-
-        entities.add(mob);
-        return true;
     }
 
 

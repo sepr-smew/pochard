@@ -151,7 +151,7 @@ public class PowerupManager {
         SCORE_MULTIPLIER,
         SUPER_SPEED,
         RATE_OF_FIRE,
-        INVULNERABLE;
+        INVULNERABLE
 
     }
 

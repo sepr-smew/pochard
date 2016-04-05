@@ -63,10 +63,13 @@ public class Collision {
             return result;
         }
 
+
         public boolean reportFixture(Fixture fixture){
-            // TODO: check fixture categoryBits
-            result = true; //AABB gave us ANY fixture, BB overlaps.
-            return false;
+            if ((fixture.getFilterData().categoryBits & maskBits) != 0) {
+                result = true; // we collided
+                return false; // ends the query
+            }
+            return true; // keep searching
         }
     }
 }

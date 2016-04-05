@@ -71,10 +71,9 @@ public class Mob extends Character {
         this.type = type;
 
         if(type==MobType.BOSS) {
-            disableCollision(); // FIXME: not using this collision
+            disableCollision();
         }
 
-        this.categoryBits = MOB_BITS;
         this.enemyBits = PLAYER_BITS;
 
         createDynamicBody(MOB_BITS, (short)(ALL_BITS & (~MOB_BITS)), MOB_GROUP, false);
@@ -108,7 +107,7 @@ public class Mob extends Character {
      */
     @Override
     public float getWidth() {
-            return walkingTextureSet.getTexture(TextureSet.FACING_FRONT, 0).getRegionWidth();
+            return walkingTextureSet.getTexture(TextureSet.Facing.FRONT, 0).getRegionWidth();
     }
 
     /**
@@ -116,7 +115,7 @@ public class Mob extends Character {
      */
     @Override
     public float getHeight() {
-            return walkingTextureSet.getTexture(TextureSet.FACING_FRONT, 0).getRegionHeight()*3/4;
+            return walkingTextureSet.getTexture(TextureSet.Facing.FRONT, 0).getRegionHeight()*3/4;
 
     }
 
@@ -127,7 +126,7 @@ public class Mob extends Character {
      */
     public void damage(int health) {
         this.currentHealth -= health;
-        parent.floatyNumbersManager.createDamageNumber(health, x, y);
+        parent.floatyNumbersManager.createDamageNumber(health, getX(), getY());
     }
 
     /**

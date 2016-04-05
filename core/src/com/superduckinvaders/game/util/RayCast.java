@@ -24,12 +24,7 @@ public class RayCast {
              * will always be closer than the previous ones, but we may not always see more distant fixures
              * past the first intersection found.
              */
-            if ((fixture.getFilterData().categoryBits & maskBits) != 0){
-                this.clear = false;
-            }
-            else {
-                this.clear = true;
-            }
+            this.clear = (fixture.getFilterData().categoryBits & maskBits) == 0;
             this.fraction = fraction;
             /* this reduces the length of the ray to the currently found intersection
              * this is done because fixtures are not necessarily reported in

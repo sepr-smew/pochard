@@ -42,7 +42,7 @@ public class Projectile extends PhysicsEntity {
     public Projectile(Round parent, Vector2 pos, Vector2 velocity, int damage, PhysicsEntity owner) {
         super(parent, pos);
 
-        createDynamicBody(PROJECTILE_BITS, (short) ~owner.categoryBits, NO_GROUP, false);
+        createDynamicBody(PROJECTILE_BITS, (short) ~owner.getCategoryBits(), NO_GROUP, false);
         body.setBullet(true);
 
 
@@ -58,7 +58,7 @@ public class Projectile extends PhysicsEntity {
      */
     public void setOwner(PhysicsEntity owner) {
         this.owner = owner;
-        setMaskBits((short) ~owner.categoryBits);
+        setMaskBits((short) ~owner.getCategoryBits());
     }
 
     /**

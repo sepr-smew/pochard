@@ -14,6 +14,7 @@ import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
 import com.badlogic.gdx.maps.tiled.tiles.AnimatedTiledMapTile;
 import com.badlogic.gdx.maps.tiled.tiles.StaticTiledMapTile;
 import com.badlogic.gdx.math.Matrix4;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
 import com.badlogic.gdx.utils.Align;
@@ -344,15 +345,23 @@ public class GameScreen implements Screen {
      * Updates the camera to be constrained to the player and to stay within the map.
      */
     private void updateCamera() {
+
+        Player player = round.getPlayer();
+
+        Vector2 playerPos = player.getPosition();
+        Vector2 playerSize = player.getSize();
+
 //      Constrain camera to player
-        if ((round.getPlayer().getX() + round.getPlayer().getWidth() > camera.position.x + camera.viewportWidth / PLAYER_CAMERA_BOUND))
-            camera.position.x = ((round.getPlayer().getX() + round.getPlayer().getWidth())) - (camera.viewportWidth / PLAYER_CAMERA_BOUND);
-        if ((round.getPlayer().getX() < camera.position.x - camera.viewportWidth / PLAYER_CAMERA_BOUND))
-            camera.position.x = (round.getPlayer().getX()) + (camera.viewportWidth / PLAYER_CAMERA_BOUND);
-        if ((round.getPlayer().getY() + round.getPlayer().getHeight() > camera.position.y + camera.viewportHeight / PLAYER_CAMERA_BOUND))
-            camera.position.y = ((round.getPlayer().getY() + round.getPlayer().getHeight())) - (camera.viewportHeight / PLAYER_CAMERA_BOUND);
-        if ((round.getPlayer().getY() < camera.position.y - camera.viewportHeight / PLAYER_CAMERA_BOUND))
-            camera.position.y = (round.getPlayer().getY()) + (camera.viewportHeight / PLAYER_CAMERA_BOUND);
+        if ((player.getX() + player.getWidth() > camera.position.x + camera.viewportWidth / PLAYER_CAMERA_BOUND))
+            camera.position.x = ((player.getX() + player.getWidth())) - (camera.viewportWidth / PLAYER_CAMERA_BOUND);
+        if ((player.getX() < camera.position.x - camera.viewportWidth / PLAYER_CAMERA_BOUND))
+            camera.position.x = (player.getX()) + (camera.viewportWidth / PLAYER_CAMERA_BOUND);
+
+
+        if ((player.getY() + player.getHeight() > camera.position.y + camera.viewportHeight / PLAYER_CAMERA_BOUND))
+            camera.position.y = ((player.getY() + player.getHeight())) - (camera.viewportHeight / PLAYER_CAMERA_BOUND);
+        if ((player.getY() < camera.position.y - camera.viewportHeight / PLAYER_CAMERA_BOUND))
+            camera.position.y = (player.getY()) + (camera.viewportHeight / PLAYER_CAMERA_BOUND);
 
 //      Constrain camera to map
         if (camera.position.x + camera.viewportWidth / 2f > round.getMapWidth())

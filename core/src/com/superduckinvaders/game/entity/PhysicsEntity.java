@@ -8,19 +8,18 @@ import com.superduckinvaders.game.Round;
  * Represents an object in the game.
  */
 public abstract class PhysicsEntity extends Entity {
-    public static final short WORLD_BITS       = 0x1;
-    public static final short PLAYER_BITS      = 0x2;
-    public static final short MOB_BITS         = 0x4;
-    public static final short PROJECTILE_BITS  = 0x8;
-    public static final short ITEM_BITS        = 0x10;
-    public static final short WATER_BITS        = 0x10;
+    public static final short WORLD_BITS         = 1     ;
+    public static final short PLAYER_BITS        = 1 << 1;
+    public static final short MOB_BITS           = 1 << 2;
+    public static final short PROJECTILE_BITS    = 1 << 3;
+    public static final short ITEM_BITS          = 1 << 4;
+    public static final short WATER_BITS         = 1 << 5;
+    public static final short BOUNDS_BITS        = 1 << 6;
     public static final short ALL_BITS         = WORLD_BITS | PLAYER_BITS | MOB_BITS |
-            PROJECTILE_BITS | ITEM_BITS | WATER_BITS;
+            PROJECTILE_BITS | ITEM_BITS | WATER_BITS | BOUNDS_BITS;
     public static final short NO_GROUP         = 0;
     public static final short MOB_GROUP        = -1;
     public static final short SENSOR_GROUP        = -2;
-
-    public short categoryBits = PLAYER_BITS;
 
     public Body body;
     public static final float METRES_PER_PIXEL = 1/16f;
@@ -61,8 +60,11 @@ public abstract class PhysicsEntity extends Entity {
         createBody(bodyType, WORLD_BITS, WORLD_BITS, NO_GROUP, false);
     }
     public void createBody(BodyDef.BodyType bodyType, short categoryBits, short maskBits, short groupIndex, boolean isSensor){
+
         float width = getWidth();
         float height = getHeight();
+
+
         BodyDef bodyDef = new BodyDef();
         bodyDef.type = bodyType;
         // bodyDef.linearDamping = 20f;
@@ -118,22 +120,6 @@ public abstract class PhysicsEntity extends Entity {
         return body.getPosition().scl(PIXELS_PER_METRE);
     }
 
-    /**
-     * Returns the x velocity of the entity
-     * @return the x velocity of this PhysicsEntity in pixels per second
-     */
-    public float getVelocityX() {
-        return getVelocity().x;
-    }
-
-    /**
-     * Returns the y velocity of the entity
-     * @return the y coordinate of this PhysicsEntity in pixels per second
-     */
-    public float getVelocityY() {
-        return getVelocity().y;
-    }
-
     public Vector2 getVelocity() {
         return getPhysicsVelocity().scl(PIXELS_PER_METRE);
     }
@@ -146,7 +132,7 @@ public abstract class PhysicsEntity extends Entity {
         setVelocity(targetVelocity, 0f);
     }
     public void setVelocityClamped(Vector2 targetVelocity) {
-        setVelocity(targetVelocity, 4f);
+        setVelocity(targetVelocity, 3f);
     }
     public void setVelocity(Vector2 targetVelocity, float limit) {
         Vector2 deltaVelocity = targetVelocity.scl(METRES_PER_PIXEL).sub(body.getLinearVelocity());
@@ -165,6 +151,16 @@ public abstract class PhysicsEntity extends Entity {
         Fixture fixture = body.getFixtureList().get(0);
         Filter filter = fixture.getFilterData();
         filter.maskBits = maskBits;
+        fixture.setFilterData(filter);
+    }
+    public short getCategoryBits(){
+        Fixture fixture = body.getFixtureList().get(0);
+        return fixture.getFilterData().categoryBits;
+    }
+    public void setCategoryBits(short categoryBits){
+        Fixture fixture = body.getFixtureList().get(0);
+        Filter filter = fixture.getFilterData();
+        filter.maskBits = categoryBits;
         fixture.setFilterData(filter);
     }
 

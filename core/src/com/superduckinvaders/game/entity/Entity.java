@@ -132,39 +132,38 @@ public abstract class Entity {
     /**
      * Returns the direction to the specified coordinates from this Entity (one of the FACING_ constants in TexutreSet).
      *
-     * @param x the x coordinate to compare with
-     * @param y the y coordinate to compare with
+     * @param pos the coordinates to compare with
      * @return the direction the coordinates are in relative to this Entity
      */
-    public int directionTo(Vector2 pos) {
+    public TextureSet.Facing directionTo(Vector2 pos) {
         return directionTo(pos.x, pos.y);
     }
 
-    public int directionTo(float x, float y) {
+    public TextureSet.Facing directionTo(float x, float y) {
         float angle = angleRadTo(x, y);
 
         if (angle < Math.PI * 3/8 && angle >= Math.PI / 8) {
-            return TextureSet.FACING_BACK_RIGHT;
+            return TextureSet.Facing.BACK_RIGHT;
 
         } else if (angle < Math.PI * 5 / 8 && angle >= Math.PI * 3/8) {
-                return TextureSet.FACING_BACK;
+                return TextureSet.Facing.BACK;
 
         } else if (angle < Math.PI * 7/8 && angle >= Math.PI * 5/8) {
-            return TextureSet.FACING_BACK_LEFT;
+            return TextureSet.Facing.BACK_LEFT;
 
         } else if (angle < -Math.PI * 5/8 && angle >= -Math.PI * 7/8) {
-            return TextureSet.FACING_FRONT_LEFT;
+            return TextureSet.Facing.FRONT_LEFT;
 
         } else if (angle < -Math.PI * 3/8 && angle >= -Math.PI * 5/8) {
-            return TextureSet.FACING_FRONT;
+            return TextureSet.Facing.FRONT;
 
         } else if (angle < -Math.PI * 1/8 && angle >= -Math.PI * 3/8) {
-            return TextureSet.FACING_FRONT_RIGHT;
+            return TextureSet.Facing.FRONT_RIGHT;
 
         } else if (angle < Math.PI * 1/8 && angle >= -Math.PI * 1/8) {
-            return TextureSet.FACING_RIGHT;
+            return TextureSet.Facing.RIGHT;
         } else {
-            return TextureSet.FACING_LEFT;
+            return TextureSet.Facing.LEFT;
         }
     }
 
@@ -228,10 +227,7 @@ public abstract class Entity {
             y = parent.getMapHeight() - getHeight();
         }
     }
-    public boolean collidesX(float deltaX) {return false;}
-    public boolean collidesY(float deltaY) {return false;}
-    public boolean collidesXfrom(float deltaX, float fromX, float fromY) {return false;}
-    public boolean collidesYfrom(float deltaY, float fromX, float fromY) {return false;}
+
     public void dispose(){}
 
     /**

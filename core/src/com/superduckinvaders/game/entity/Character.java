@@ -15,7 +15,7 @@ public abstract class Character extends PhysicsEntity {
     /**
      * The direction the Character is facing.
      */
-    protected int facing = TextureSet.FACING_FRONT;
+    protected TextureSet.Facing facing = TextureSet.Facing.FRONT;
 
     /**
      * Determines whether a character should collide with objects.
@@ -35,7 +35,12 @@ public abstract class Character extends PhysicsEntity {
     protected static float MELEE_RANGE = 30f;
     protected static float MELEE_ATTACK_COOLDOWN = 0.2f;
     protected float meleeAttackTimer = 0f;
+    protected static float RANGED_RANGE = 30f;
+    protected static float RANGED_ATTACK_COOLDOWN = 0.2f;
+    protected float rangedAttackTimer = 0f;
+
     protected short enemyBits = 0;
+    protected short originalMaskBits;
     protected ArrayList<PhysicsEntity> enemiesInRange;
 
     public int waterBlockCount = 0;
@@ -59,6 +64,8 @@ public abstract class Character extends PhysicsEntity {
     public void createBody(BodyDef.BodyType bodyType, short categoryBits, short maskBits, short groupIndex, boolean isSensor){
         super.createBody(bodyType, categoryBits, maskBits, groupIndex, isSensor);
 
+        this.originalMaskBits = maskBits;
+
         CircleShape meleeSensorShape = new CircleShape();
         meleeSensorShape.setRadius(MELEE_RANGE / PIXELS_PER_METRE);
 
@@ -80,7 +87,7 @@ public abstract class Character extends PhysicsEntity {
      * Gets the direction the character is facing
      * @return the direction this Character is facing (one of the FACING_ constants in TextureSet)
      */
-    public int getFacing() {
+    public TextureSet.Facing getFacing() {
         return facing;
     }
 
@@ -106,14 +113,14 @@ public abstract class Character extends PhysicsEntity {
      * Enables character collision
      */
     public void enableCollision(){
-        shouldCheckCollision=true;
+        setMaskBits(originalMaskBits);
     }
 
     /**
      * Disables character collision
      */
     public void disableCollision(){
-        shouldCheckCollision=false;
+        setMaskBits(PhysicsEntity.BOUNDS_BITS);
     }
 
 
@@ -154,20 +161,13 @@ public abstract class Character extends PhysicsEntity {
         return waterBlockCount > 0;
     }
 
-    public void fireAt(Vector2 direction, float projectileSpeed, int damage) {
-        Vector2 velocity = direction.setLength(projectileSpeed).add(getPhysicsVelocity());
-        velocity.setLength(Math.max(projectileSpeed, velocity.len()));
-        fireAt(Vector2.Zero.cpy(), velocity, damage);
+    public void fireAt(Vector2 velocity, int damage) {
+        fireAt(getCentre(), velocity, damage);
 
     }
-    public void fireAt(int startx, int starty, float targetx, float targety, float speed, int damage) {
-        Vector2 offset = new Vector2(startx, starty);
-        Vector2 startPos = offset.cpy().add(getPosition());
-        fireAt(offset, new Vector2(targetx, targety).sub(startPos).setLength(speed), damage);
-    }
 
-    public void fireAt(Vector2 offset, Vector2 velocity, int damage) {
-        parent.createProjectile(offset.add(getPosition()), velocity, damage, this);
+    public void fireAt(Vector2 position, Vector2 velocity, int damage) {
+        parent.createProjectile(position, velocity, damage, this);
     }
 
     @Override
@@ -201,22 +201,19 @@ public abstract class Character extends PhysicsEntity {
 //        }
 //        if (meleeAttackTimer > MELEE_ATTACK_COOLDOWN && !enemiesInRange.isEmpty()){
         if (meleeAttackTimer > MELEE_ATTACK_COOLDOWN){
-            if (enemiesInRange.isEmpty()) {
-                return false;
-            }
-            else {
-                meleeAttackTimer = 0f;
-            }
+
+            if (enemiesInRange.isEmpty()) return false;
+            else meleeAttackTimer = 0f;
 
             for (PhysicsEntity entity : enemiesInRange) {
                 if (directionTo(entity.getCentre()) == facing) {
                     if (entity instanceof Character) {
                         Character character = (Character) entity;
                         character.damage(damage);
-                        character.setVelocity(direction.cpy().setLength(40f));
+                        character.setVelocity(direction.cpy().setLength(400f));
                     } else if (entity instanceof Projectile){
                         Projectile projectile = (Projectile) entity;
-                        float speed = projectile.getPhysicsVelocity().len();
+                        float speed = projectile.getVelocity().len();
                         Vector2 newVelocity = vectorTo(projectile.getCentre()).setLength(speed*2);
                         projectile.setOwner(this);
                         projectile.setVelocity(newVelocity);
@@ -226,43 +223,6 @@ public abstract class Character extends PhysicsEntity {
             return true;
         }
         return false;
-    }
-
-    /**
-     * Causes this Character to use a melee attack.
-     *
-     * @param range  how far the attack reaches in pixels
-     * @param damage how much damage the attack deals
-     */
-    protected void melee(float range, int damage) {
-        // Don't let mobs melee other mobs (for now).
-        if (this instanceof Mob) {
-            Player player = parent.getPlayer();
-
-            if (distanceTo(player.getX(), player.getY()) <= range && directionTo(player.getX(), player.getY()) == facing) {
-                player.damage(damage);
-            }
-        } else {
-            // Attack the closest Character within the range.
-            Character closest = null;
-
-            for (Entity entity : parent.getEntities()) {
-                // Disregard entity if it's me or it isn't a Character.
-                if (this == entity || !(entity instanceof Character)) {
-                    continue;
-                }
-
-                float x = entity.getX(), y = entity.getY();
-                if (distanceTo(x, y) <= range && directionTo(x, y) == facing && (closest == null || distanceTo(x, y) < distanceTo(closest.getX(), closest.getY()))) {
-                    closest = (Character) entity;
-                }
-            }
-
-            // Can't attack if nothing in range.
-            if (closest != null) {
-                closest.damage(damage);
-            }
-        }
     }
 
     /**
@@ -278,16 +238,16 @@ public abstract class Character extends PhysicsEntity {
         // Update Character facing.
         Vector2 velocity = getVelocity();
         if (velocity.x < 0) {
-            facing = TextureSet.FACING_LEFT;
+            facing = TextureSet.Facing.LEFT;
         } else if (velocity.x > 0) {
-            facing = TextureSet.FACING_RIGHT;
+            facing = TextureSet.Facing.RIGHT;
         }
 
         if (velocity.y < 0) {
-            facing = TextureSet.FACING_FRONT;
+            facing = TextureSet.Facing.FRONT;
         }
         else if (velocity.x > 0) {
-            facing = TextureSet.FACING_BACK;
+            facing = TextureSet.Facing.BACK;
         }
 
         if (isDead()) {

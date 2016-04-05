@@ -18,10 +18,13 @@ public class Obstacle extends PhysicsEntity {
      * @param height the block's height.
      */
     public Obstacle(Round parent, float x, float y, float width, float height) {
+        this(parent, x, y, width, height, WORLD_BITS);
+    }
+    public Obstacle(Round parent, float x, float y, float width, float height, short categoryBits) {
         super(parent, x, y);
         this.width = width;
         this.height = height;
-        createBody(BodyDef.BodyType.StaticBody, WORLD_BITS, ALL_BITS, NO_GROUP, false);
+        createBody(BodyDef.BodyType.StaticBody, categoryBits, ALL_BITS, NO_GROUP, false);
     }
 
     @Override
