@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.PriorityQueue;
+import java.util.function.Function;
 
 /**
  * AI that follows and attacks the player within a certain range.
@@ -60,6 +61,7 @@ public class PathfindingAI extends AI {
      * The Coordinate for the AI to find a path for.
      */
     public Coordinate target;
+    public List<SearchNode> path_DEBUG;
 
     protected Vector2 playerPos;
 
@@ -111,17 +113,21 @@ public class PathfindingAI extends AI {
      * @return Returns a Coordinate for the path finding
      */
     private Coordinate FindPath(Mob mob) {
-        Vector2 mobPos = mob.getCentre();
+        Vector2 mobCentre = mob.getCentre();
+        Vector2 mobPos = mob.getPosition();
         Vector2 mobSize = mob.getSize();
-        Coordinate startCoord = roundToTile(mobPos);
+        Vector2 halfSize = mobSize.cpy().scl(0.5f);
+
+        Coordinate startCoord = roundToTile(mobCentre);
         Coordinate finalCoord = roundToTile(playerPos);
         boolean finalFound = false;
 
         if (round.pathIsClear(mobPos, mobSize, playerPos)){
-            if (new Vector2(playerPos).sub(mobPos).len() < targetRange){
+            if (new Vector2(playerPos).sub(mobCentre).len() < targetRange){
                 return null;
             }
             else {
+                path_DEBUG = null;
                 currentOffset = deltaOffsetLimit;
                 return new Coordinate(playerPos);
             }
@@ -156,13 +162,15 @@ public class PathfindingAI extends AI {
             };
 
             for (Coordinate currentPerm : perm) {
-                if (!visitedStates.containsKey(currentPerm) && !round.collidePoint(currentPerm.vector())) {
+//                if (!visitedStates.containsKey(currentPerm) && !round.collidePoint(currentPerm.vector())) {
+                if (!visitedStates.containsKey(currentPerm) && !round.collideArea(currentPerm.vector().sub(halfSize), mobSize)) {
                     fringe.add(currentPerm);
                     visitedStates.put(currentPerm, new SearchNode(currentState, currentPerm, currentState.iteration + 1));
                 }
             }
         }
         if (!finalFound) {
+            path_DEBUG = null;
             return null;
         } else {
             SearchNode resultNode;
@@ -178,12 +186,13 @@ public class PathfindingAI extends AI {
             int index = path.size()-1;
             while (index > 0) {
                 SearchNode tempNode = path.get(index-1);
-                if(!round.pathIsClear(mobPos, mobSize, tempNode.coord.vector())){
+                if(!round.pathIsClear(mobCentre, mobSize, tempNode.coord.vector())){
                     break;
                 }
                 index--;
             }
             resultNode = path.get(index);
+            path_DEBUG=path;
 
             return resultNode.coord;
         }
@@ -312,7 +321,7 @@ public class PathfindingAI extends AI {
     /**
      * Represents a node in the A* search tree.
      */
-    class SearchNode {
+    public class SearchNode {
         /**
          * The predecessor node in the search tree.
          */

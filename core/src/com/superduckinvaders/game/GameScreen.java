@@ -5,6 +5,7 @@ import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.maps.tiled.TiledMapTile;
 import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
 import com.badlogic.gdx.maps.tiled.TiledMapTileSet;
@@ -14,6 +15,8 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
 import com.badlogic.gdx.utils.Align;
+import com.superduckinvaders.game.ai.AI;
+import com.superduckinvaders.game.ai.PathfindingAI;
 import com.superduckinvaders.game.assets.Assets;
 import com.superduckinvaders.game.entity.Entity;
 import com.superduckinvaders.game.entity.PhysicsEntity;
@@ -24,6 +27,7 @@ import com.superduckinvaders.game.entity.mob.RangedMob;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -89,6 +93,8 @@ public class GameScreen implements Screen {
     Box2DDebugRenderer debugRenderer;
     Matrix4 debugMatrix;
 
+    ShapeRenderer shapeRenderer;
+
 
 
 
@@ -102,6 +108,7 @@ public class GameScreen implements Screen {
         this.level = level;
 
         debugRenderer = new Box2DDebugRenderer();
+        shapeRenderer = new ShapeRenderer();
     }
 
     /**
@@ -174,6 +181,7 @@ public class GameScreen implements Screen {
 
 
     }
+
 
     /**
      * Main game loop.
@@ -258,6 +266,32 @@ public class GameScreen implements Screen {
                 uiBatch2.draw(Assets.healthFull, offsetX, offsetY);
             }
         }
+
+        //DEBUGGING
+
+        shapeRenderer.setProjectionMatrix(camera.combined);
+
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+
+
+        round.getEntities().stream().filter(e -> e instanceof Mob).map(e -> (Mob)e).forEach(mob ->{
+            PathfindingAI.Coordinate c = ((PathfindingAI)mob.getAI()).target;
+            List<PathfindingAI.SearchNode> l = ((PathfindingAI)mob.getAI()).path_DEBUG;
+            shapeRenderer.setColor(1, 0, 1, 1);
+            if (l != null) {
+                for (PathfindingAI.SearchNode s : l){
+                    shapeRenderer.x(s.coord.vector(), 7);
+                }
+            }
+            shapeRenderer.setColor(0, 1, 1, 1);
+            if (c != null) {
+                shapeRenderer.x(c.vector(), 10);
+            }
+        });
+
+        shapeRenderer.end();
+
+        // END
 
         uiBatch2.end();
         mapRenderer.getBatch().begin();

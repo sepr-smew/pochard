@@ -82,6 +82,10 @@ public abstract class Mob extends Character {
         this.ai = ai;
     }
 
+    public AI getAI() {
+        return ai;
+    }
+
     /**
      * Sets the speed of the mob
      * @param newSpeed the updated speed

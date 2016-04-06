@@ -38,7 +38,7 @@ public abstract class Character extends PhysicsEntity {
     protected static float RANGED_RANGE = 30f;
     protected static float RANGED_ATTACK_COOLDOWN = 0.2f;
     protected float rangedAttackTimer = 0f;
-    protected static int RANGED_DAMAGE = 1;
+    protected int RANGED_DAMAGE = 1;
 
     protected short enemyBits = 0;
     protected ArrayList<PhysicsEntity> enemiesInRange;
@@ -173,7 +173,7 @@ public abstract class Character extends PhysicsEntity {
         super.preSolve(other, contact, manifold);
         // Disabling contact here rather than changing collision mask so we can still
         // tell when the player is contacting something to prevent re-enabling while inside an object
-        if (contact.isEnabled() && !shouldCheckCollision){
+        if (!shouldCheckCollision && contact.isEnabled() && other.getCategoryBits() != BOUNDS_BITS){
             contact.setEnabled(false);
         }
     }
@@ -207,11 +207,8 @@ public abstract class Character extends PhysicsEntity {
 //        if (isStunned()) {
 //            return false;
 //        }
-//        if (meleeAttackTimer > MELEE_ATTACK_COOLDOWN && !enemiesInRange.isEmpty()){
-        if (meleeAttackTimer > MELEE_ATTACK_COOLDOWN){
-
-            if (enemiesInRange.isEmpty()) return false;
-            else meleeAttackTimer = 0f;
+        if (meleeAttackTimer > MELEE_ATTACK_COOLDOWN && !enemiesInRange.isEmpty()){
+            meleeAttackTimer = 0f;
 
             for (PhysicsEntity entity : enemiesInRange) {
                 if (directionTo(entity.getCentre()) == facing) {

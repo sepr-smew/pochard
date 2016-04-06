@@ -517,7 +517,7 @@ public class Player extends Character {
     @Override
     public void beginCollision(PhysicsEntity other, Contact contact) {
         super.beginCollision(other, contact);
-        if (isFlying){
+        if (isFlying && 0 == (other.getCategoryBits() & (BOUNDS_BITS | WATER_BITS))){
             flyingContacts.add(contact);
         }
     }

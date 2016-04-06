@@ -164,6 +164,10 @@ public abstract class PhysicsEntity extends Entity {
         fixture.setFilterData(filter);
     }
 
+    public boolean testCollisionMask(PhysicsEntity other){
+        return (0 != (getMaskBits() & other.getCategoryBits()) && 0 != (getCategoryBits() & other.getMaskBits()));
+    }
+
     @Override
     public void dispose(){
         if (body != null){
