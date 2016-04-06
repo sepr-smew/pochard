@@ -237,18 +237,11 @@ public abstract class Character extends PhysicsEntity {
 
         // Update Character facing.
         Vector2 velocity = getVelocity();
-        if (velocity.x < 0) {
-            facing = TextureSet.Facing.LEFT;
-        } else if (velocity.x > 0) {
-            facing = TextureSet.Facing.RIGHT;
-        }
 
-        if (velocity.y < 0) {
-            facing = TextureSet.Facing.FRONT;
-        }
-        else if (velocity.x > 0) {
-            facing = TextureSet.Facing.BACK;
-        }
+        if (Math.abs(velocity.y) > Math.abs(velocity.x))
+            facing = velocity.y > 0 ?  TextureSet.Facing.BACK : TextureSet.Facing.FRONT;
+        else if (Math.abs(velocity.y) < Math.abs(velocity.x))
+            facing = velocity.x > 0 ?  TextureSet.Facing.RIGHT : TextureSet.Facing.LEFT;
 
         if (isDead()) {
             removed = true;

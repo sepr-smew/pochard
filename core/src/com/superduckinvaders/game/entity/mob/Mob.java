@@ -1,7 +1,9 @@
 
-package com.superduckinvaders.game.entity;
+package com.superduckinvaders.game.entity.mob;
 
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.superduckinvaders.game.Round;
@@ -9,6 +11,7 @@ import com.superduckinvaders.game.ai.AI;
 import com.superduckinvaders.game.ai.DummyAI;
 import com.superduckinvaders.game.assets.Assets;
 import com.superduckinvaders.game.assets.TextureSet;
+import com.superduckinvaders.game.entity.Character;
 import com.superduckinvaders.game.entity.item.PowerupManager;
 import com.superduckinvaders.game.objective.BossObjective;
 import com.superduckinvaders.game.objective.KillObjective;
@@ -20,6 +23,7 @@ public abstract class Mob extends Character {
      * The texture set to use for this Mob.
      */
     protected TextureSet walkingTextureSet, swimmingTextureSet;
+    protected Texture shadow;
     
     /**
      * AI class for the mob
@@ -53,11 +57,12 @@ public abstract class Mob extends Character {
      * @param swimmingTextureSet The textureset of the mob when on water
      * @param ai The ai for the mob
      */
-    public Mob(Round parent, float x, float y, int health, int speed, int score, TextureSet walkingTextureSet, TextureSet swimmingTextureSet, AI ai) {
+    public Mob(Round parent, float x, float y, int health, int speed, int score, TextureSet walkingTextureSet, TextureSet swimmingTextureSet, Texture shadow, AI ai) {
         super(parent, x, y, health);
 
         this.walkingTextureSet = walkingTextureSet;
         this.swimmingTextureSet = swimmingTextureSet;
+        this.shadow = shadow;
         this.speed = speed;
         this.score = score;
         this.ai = ai;
@@ -199,5 +204,15 @@ public abstract class Mob extends Character {
      */
     @Override
     public void render(SpriteBatch spriteBatch) {
+        Vector2 pos = getPosition().cpy();
+
+        Vector2 shadowPos = getCentre().cpy().add(0, -getHeight()/2)
+                .add(-shadow.getWidth()/2, -shadow.getHeight()/2);
+
+        TextureRegion texture = (isOnWater() ? swimmingTextureSet : walkingTextureSet)
+                .getTexture(facing, stateTime);
+
+        spriteBatch.draw(shadow, shadowPos.x, shadowPos.y);
+        spriteBatch.draw(texture, pos.x, pos.y);
     }
 }

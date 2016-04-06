@@ -117,7 +117,7 @@ public abstract class PhysicsEntity extends Entity {
 
     @Override
     public Vector2 getCentre(){
-        return body.getPosition().scl(PIXELS_PER_METRE);
+        return body.getPosition().cpy().scl(PIXELS_PER_METRE);
     }
 
     public Vector2 getVelocity() {

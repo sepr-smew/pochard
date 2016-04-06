@@ -7,12 +7,6 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
  * Represents a standard set of textures for character facing and animation.
  */
 public final class TextureSet {
-
-    /**
-     * Constants for which way the character is facing.
-     */
-    public static final int FACING_FRONT = 0, FACING_FRONT_LEFT = 1, FACING_LEFT = 2, FACING_BACK_LEFT = 3,
-                            FACING_BACK = 4, FACING_BACK_RIGHT = 5, FACING_RIGHT = 6, FACING_FRONT_RIGHT = 7;
     
     public enum Facing {
         FRONT       (0),
@@ -63,8 +57,8 @@ public final class TextureSet {
      * @param right the right facing texture
      */
     public TextureSet(TextureRegion front, TextureRegion back, TextureRegion left, TextureRegion right) {
-        this(front, back, left, right, new Animation(0, front),
-                new Animation(0, back), new Animation(0, left), new Animation(0, right));
+        this(front, back, left, right,
+                new Animation(0, front), new Animation(0, back), new Animation(0, left), new Animation(0, right));
     }
 
     /**
@@ -81,8 +75,8 @@ public final class TextureSet {
      */
     public TextureSet(TextureRegion front, TextureRegion back, TextureRegion left, TextureRegion right,
                       Animation walkingFront, Animation walkingBack, Animation walkingLeft, Animation walkingRight) {
-        this(front, null, left, null, back, null, right, null,
-                walkingFront, null, walkingBack, null, walkingLeft, null, walkingRight, null);
+        this(front, null, back, null, left, null, right, null,
+                walkingFront, null, walkingLeft, null, walkingBack, null, walkingRight, null);
     }
 
     /**
@@ -105,7 +99,7 @@ public final class TextureSet {
                       TextureRegion back, TextureRegion backRight, TextureRegion right, TextureRegion frontRight,
                       Animation walkingFront, Animation walkingBack, Animation walkingLeft, Animation walkingRight) {
         this(front, frontLeft, left, backLeft, back, backRight, right, frontRight,
-                walkingFront, null, walkingBack, null, walkingLeft, null, walkingRight, null);
+                walkingFront, null, walkingLeft, null, walkingBack, null, walkingRight, null);
     }
 
     /**

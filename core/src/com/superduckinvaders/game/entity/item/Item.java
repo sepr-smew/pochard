@@ -5,7 +5,6 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.MathUtils;
 import com.superduckinvaders.game.Round;
 import com.superduckinvaders.game.assets.Assets;
-import com.superduckinvaders.game.entity.Entity;
 import com.superduckinvaders.game.entity.PhysicsEntity;
 
 public class Item extends PhysicsEntity {
@@ -67,7 +66,7 @@ public class Item extends PhysicsEntity {
     @Override
     public void render(SpriteBatch spriteBatch) {
         //System.out.println("RENDERING? " + runningTime);
-        spriteBatch.draw(Assets.shadow, x-8, y-4);
+        spriteBatch.draw(Assets.mobShadow, x-8, y-4);
         spriteBatch.draw(texture, getX(), getY() + (int) (MathUtils.sin(runningTime*2)*6) + 6);
     }
 

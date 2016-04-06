@@ -2,31 +2,27 @@ package com.superduckinvaders.game;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
-import com.badlogic.gdx.graphics.Cursor;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
-import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.maps.tiled.TiledMapTile;
 import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
 import com.badlogic.gdx.maps.tiled.TiledMapTileSet;
 import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
-import com.badlogic.gdx.maps.tiled.tiles.AnimatedTiledMapTile;
-import com.badlogic.gdx.maps.tiled.tiles.StaticTiledMapTile;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
 import com.badlogic.gdx.utils.Align;
-import com.badlogic.gdx.utils.Array;
 import com.superduckinvaders.game.assets.Assets;
-import com.superduckinvaders.game.entity.*;
-import com.superduckinvaders.game.entity.Character;
-import com.superduckinvaders.game.entity.item.PowerupManager;
+import com.superduckinvaders.game.entity.Entity;
+import com.superduckinvaders.game.entity.PhysicsEntity;
+import com.superduckinvaders.game.entity.Player;
+import com.superduckinvaders.game.entity.mob.BossMob;
+import com.superduckinvaders.game.entity.mob.Mob;
+import com.superduckinvaders.game.entity.mob.RangedMob;
 
-import java.awt.*;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -249,7 +245,7 @@ public class GameScreen implements Screen {
                 if (mob instanceof BossMob) {
                     offsetX += 40;
                     offsetY += 15;
-                } else if (mob instanceof  RangedMob) {
+                } else if (mob instanceof RangedMob) {
                     offsetX -= 5;
                     offsetY += 30;
                 } else {

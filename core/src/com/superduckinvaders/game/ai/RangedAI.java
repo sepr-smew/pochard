@@ -1,11 +1,7 @@
 package com.superduckinvaders.game.ai;
 
-import com.badlogic.gdx.math.MathUtils;
-import com.badlogic.gdx.math.Vector2;
 import com.superduckinvaders.game.Round;
-import com.superduckinvaders.game.entity.Mob;
-import com.superduckinvaders.game.entity.PhysicsEntity;
-import com.superduckinvaders.game.entity.Projectile;
+import com.superduckinvaders.game.entity.mob.Mob;
 
 /**
  * Ai that will shoot at the player and move towards them.

@@ -116,12 +116,12 @@ public class Assets {
     /**
      * Shadow for mobs.
      */
-    public static Texture shadow;
+    public static Texture mobShadow;
 
     /**
-     * Player shadow.
+     * Player mobShadow.
      */
-    public static Texture shadow2;
+    public static Texture playerShadow;
 
     /**
      * 'ROUND' text for beginning of round.
@@ -181,14 +181,7 @@ public class Assets {
 
         //Load the maps for the levels
         levels = new TiledMap[8];
-        loadLevel(0);
-        loadLevel(1);
-        loadLevel(2);
-        loadLevel(3);
-        loadLevel(4);
-        loadLevel(5);
-        loadLevel(6);
-        loadLevel(7);
+        for (int i = 0; i < 8; i++) loadLevel(i);
 
         font = loadFont("font/gamefont2.fnt");
 
@@ -222,8 +215,8 @@ public class Assets {
 
         cursor = new Pixmap(Gdx.files.internal("textures/cursor_crosshair.png"));
 
-        shadow = new Texture("textures/shadow3.png");
-        shadow2 = new Texture("textures/shadow2.png");
+        mobShadow = new Texture("textures/mobShadow.png");
+        playerShadow = new Texture("textures/playerShadow.png");
 
         roundText = new Texture("RoundFonts/Round.png");
 

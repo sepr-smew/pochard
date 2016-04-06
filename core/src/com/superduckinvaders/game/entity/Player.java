@@ -11,9 +11,6 @@ import com.superduckinvaders.game.assets.Assets;
 import com.superduckinvaders.game.assets.TextureSet;
 import com.superduckinvaders.game.entity.item.PowerupManager;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * Represents the player of the game.
  */
@@ -515,7 +512,7 @@ public class Player extends Character {
         // Use the right texture set.
         TextureSet textureSet = isOnWater() ? Assets.playerSwimming : Assets.playerNormal;
 
-        spriteBatch.draw(Assets.shadow2, getX()-2, getY()-6);//Draw the shadow under the player
+        spriteBatch.draw(Assets.playerShadow, getX()-2, getY()-6);//Draw the mobShadow under the player
         if(isFlying)
             spriteBatch.draw(Assets.playerFlying.getTexture(facing, 0), getX() - getBoundsX()-18, getY() - getBoundsY()+10);
         else {
