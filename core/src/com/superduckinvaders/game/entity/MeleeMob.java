@@ -1,6 +1,7 @@
 package com.superduckinvaders.game.entity;
 
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 import com.superduckinvaders.game.Round;
 import com.superduckinvaders.game.ai.AI;
@@ -21,16 +22,16 @@ public class MeleeMob extends Mob {
     @Override
     public void render(SpriteBatch spriteBatch) {
         super.render(spriteBatch);
-        
-        Vector2 pos = getPosition();
-        
-        if(isOnWater()) {
-            spriteBatch.draw(Assets.shadow, pos.x-5, pos.y);
-            spriteBatch.draw(swimmingTextureSet.getTexture(facing, stateTime), pos.x, pos.y);
-        }
-        else {
-            spriteBatch.draw(Assets.shadow, pos.x - 5, pos.y - 5);
-            spriteBatch.draw(walkingTextureSet.getTexture(facing, stateTime), pos.x, pos.y);
-        }
+
+        Vector2 pos = getPosition().cpy();
+
+        Vector2 shadowPos = getCentre().cpy().add(0, -getHeight()/2)
+                .add(-Assets.shadow.getWidth()/2, -Assets.shadow.getHeight()/2);
+
+        TextureRegion texture = (isOnWater() ? swimmingTextureSet : walkingTextureSet)
+                                .getTexture(facing, stateTime);
+
+        spriteBatch.draw(Assets.shadow, shadowPos.x, shadowPos.y);
+        spriteBatch.draw(texture, pos.x, pos.y);
     }
 }

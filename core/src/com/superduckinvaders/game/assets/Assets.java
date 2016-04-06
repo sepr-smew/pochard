@@ -222,7 +222,7 @@ public class Assets {
 
         cursor = new Pixmap(Gdx.files.internal("textures/cursor_crosshair.png"));
 
-        shadow = new Texture("textures/shadow.png");
+        shadow = new Texture("textures/shadow3.png");
         shadow2 = new Texture("textures/shadow2.png");
 
         roundText = new Texture("RoundFonts/Round.png");

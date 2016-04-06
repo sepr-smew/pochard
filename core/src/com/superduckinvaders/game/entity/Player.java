@@ -447,9 +447,9 @@ public class Player extends Character {
                 Vector2 target = new Vector2(target3.x, target3.y);
 
                 //Alter starting point based on if on water or not
-                Vector2 origin = (isOnWater() ? projectileDrawPointSwimming : projectileDrawPoint)[facing.index()];
+                Vector2 origin = getPosition()
+                                .add((isOnWater() ? projectileDrawPointSwimming : projectileDrawPoint)[facing.index()]);
                 Vector2 velocity = target.sub(origin).setLength(500);
-
                 fireAt(origin, velocity, 50);
             }
         }
