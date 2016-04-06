@@ -38,9 +38,9 @@ public abstract class Character extends PhysicsEntity {
     protected static float RANGED_RANGE = 30f;
     protected static float RANGED_ATTACK_COOLDOWN = 0.2f;
     protected float rangedAttackTimer = 0f;
+    protected static int RANGED_DAMAGE = 1;
 
     protected short enemyBits = 0;
-    protected short originalMaskBits;
     protected ArrayList<PhysicsEntity> enemiesInRange;
 
     public int waterBlockCount = 0;
@@ -63,8 +63,6 @@ public abstract class Character extends PhysicsEntity {
     @Override
     public void createBody(BodyDef.BodyType bodyType, short categoryBits, short maskBits, short groupIndex, boolean isSensor){
         super.createBody(bodyType, categoryBits, maskBits, groupIndex, isSensor);
-
-        this.originalMaskBits = maskBits;
 
         CircleShape meleeSensorShape = new CircleShape();
         meleeSensorShape.setRadius(MELEE_RANGE / PIXELS_PER_METRE);
@@ -113,14 +111,14 @@ public abstract class Character extends PhysicsEntity {
      * Enables character collision
      */
     public void enableCollision(){
-        setMaskBits(originalMaskBits);
+        shouldCheckCollision = true;
     }
 
     /**
      * Disables character collision
      */
     public void disableCollision(){
-        setMaskBits(PhysicsEntity.BOUNDS_BITS);
+        shouldCheckCollision = false;
     }
 
 
@@ -161,13 +159,23 @@ public abstract class Character extends PhysicsEntity {
         return waterBlockCount > 0;
     }
 
-    public void fireAt(Vector2 velocity, int damage) {
-        fireAt(getCentre(), velocity, damage);
+    public void fireAt(Vector2 velocity) {
+        fireAt(getCentre(), velocity);
 
     }
 
-    public void fireAt(Vector2 position, Vector2 velocity, int damage) {
-        parent.createProjectile(position, velocity, damage, this);
+    public void fireAt(Vector2 position, Vector2 velocity) {
+        parent.createProjectile(position, velocity, RANGED_DAMAGE, this);
+    }
+
+    @Override
+    public void preSolve(PhysicsEntity other, Contact contact, Manifold manifold) {
+        super.preSolve(other, contact, manifold);
+        // Disabling contact here rather than changing collision mask so we can still
+        // tell when the player is contacting something to prevent re-enabling while inside an object
+        if (contact.isEnabled() && !shouldCheckCollision){
+            contact.setEnabled(false);
+        }
     }
 
     @Override
@@ -216,6 +224,7 @@ public abstract class Character extends PhysicsEntity {
                         float speed = projectile.getVelocity().len();
                         Vector2 newVelocity = vectorTo(projectile.getCentre()).setLength(speed*2);
                         projectile.setOwner(this);
+                        projectile.setDamage(RANGED_DAMAGE*2);
                         projectile.setVelocity(newVelocity);
                     }
                 }

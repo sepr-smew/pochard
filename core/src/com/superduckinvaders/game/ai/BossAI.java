@@ -114,7 +114,7 @@ public class BossAI extends AI {
         }
         if(burstRemaining>=0){
             if (burstRemaining % 5 == 0) {
-                mob.fireAt(mob.vectorTo(playerPos).setLength(PROJECTILE_SPEED), 1);
+                mob.fireAt(mob.vectorTo(playerPos).setLength(PROJECTILE_SPEED));
             }
             burstRemaining--;
         }

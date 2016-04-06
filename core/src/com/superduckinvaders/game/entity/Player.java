@@ -6,10 +6,13 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.physics.box2d.Contact;
 import com.superduckinvaders.game.Round;
 import com.superduckinvaders.game.assets.Assets;
 import com.superduckinvaders.game.assets.TextureSet;
 import com.superduckinvaders.game.entity.item.PowerupManager;
+
+import java.util.ArrayList;
 
 /**
  * Represents the player of the game.
@@ -150,6 +153,8 @@ public class Player extends Character {
      */
     private int boundsY = 7;
 
+    private ArrayList<Contact> flyingContacts = new ArrayList<>();
+
     /**
      * Initialises this Player at the specified coordinates and with the specified initial health.
      *
@@ -161,6 +166,7 @@ public class Player extends Character {
         super(parent, x, y, PLAYER_HEALTH);
         enemyBits = MOB_BITS | PROJECTILE_BITS;
         MELEE_RANGE = 40f;
+        RANGED_DAMAGE = 50;
         createDynamicBody(PLAYER_BITS, ALL_BITS, NO_GROUP, false);
 
         projectileDrawPoint = new Vector2[]{
@@ -238,28 +244,10 @@ public class Player extends Character {
      */
     public void enableFlying(){
 
-        /*Vector2 velocity = new Vector2();
-        //Get left/right movement
-        if (Gdx.input.isKeyPressed(Input.Keys.A)) {
-            velocity.x = -(PLAYER_SPEED*PLAYER_FLIGHT_SPEED_MULTIPLIER);
-            facing=TextureSet.Facing.LEFT;
-        } else if (Gdx.input.isKeyPressed(Input.Keys.D)) {
-            velocity.x = (PLAYER_SPEED*PLAYER_FLIGHT_SPEED_MULTIPLIER);
-            facing=TextureSet.Facing.RIGHT;
-        }
-        //Get up/down movement
-        if (Gdx.input.isKeyPressed(Input.Keys.W)) {
-            velocity.y = (PLAYER_SPEED*PLAYER_FLIGHT_SPEED_MULTIPLIER);
-        } else if (Gdx.input.isKeyPressed(Input.Keys.S)) {
-            velocity.y = -(PLAYER_SPEED*PLAYER_FLIGHT_SPEED_MULTIPLIER);
-        }
-        accX=0;
-        accY=0;*/
+        setVelocity(getVelocity().setLength(PLAYER_SPEED*PLAYER_FLIGHT_SPEED_MULTIPLIER*1.3f));
+
         disableCollision();
         isFlying = true;
-
-        //Normalizes vectors to prevent diagonal movement being faster
-//        setVelocity(velocity.nor());
 
         Assets.flying.loop();
     }
@@ -268,10 +256,7 @@ public class Player extends Character {
      * Attempts to disable flying. Will not disable if the player is currently over a collision tile
      */
     public void disableFlying(){
-//        if(collidesX(0))
-//            return;
-//        if(collidesY(0))
-//            return;
+        if (!flyingContacts.isEmpty()) return;
 
         enableCollision();
         isFlying=false;
@@ -447,7 +432,7 @@ public class Player extends Character {
                 Vector2 origin = getPosition()
                                 .add((isOnWater() ? projectileDrawPointSwimming : projectileDrawPoint)[facing.index()]);
                 Vector2 velocity = target.sub(origin).setLength(500);
-                fireAt(origin, velocity, 50);
+                fireAt(origin, velocity);
             }
         }
 
@@ -497,9 +482,12 @@ public class Player extends Character {
             velocity.y += -1f;
         }
 
+        if (isFlying && velocity.isZero())
+            velocity = getVelocity();
+
         velocity.setLength(speed);
 
-        setVelocity(velocity, isFlying ? 1f : 4f);
+        setVelocity(velocity, isFlying ? 0.7f : 4f);
     }
 
     /**
@@ -525,6 +513,22 @@ public class Player extends Character {
         damageFramesFrame=!damageFramesFrame;
     }
 
+
+    @Override
+    public void beginCollision(PhysicsEntity other, Contact contact) {
+        super.beginCollision(other, contact);
+        if (isFlying){
+            flyingContacts.add(contact);
+        }
+    }
+
+    @Override
+    public void endCollision(PhysicsEntity other, Contact contact) {
+        super.endCollision(other, contact);
+        if (isFlying && flyingContacts.contains(contact)){
+            flyingContacts.remove(contact);
+        }
+    }
 
     /**
      * Available upgrades (upgrades are persistent).

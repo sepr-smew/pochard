@@ -47,7 +47,7 @@ public class RangedAI extends PathfindingAI {
         attackTimer-=delta;
         if(attackTimer <= 0 && distanceFromPlayer <= attackRange) {
             if (round.rayCast(mob.getCentre(), playerPos)) {
-                mob.fireAt(mob.vectorTo(playerPos).setLength(PROJECTILE_SPEED), 1);
+                mob.fireAt(mob.vectorTo(playerPos).setLength(PROJECTILE_SPEED));
                 attackTimer = ATTACK_DELAY;
             }
         }

@@ -52,6 +52,10 @@ public class Projectile extends PhysicsEntity {
         this.owner = owner;
     }
 
+    public void setDamage(int damage) {
+        this.damage = damage;
+    }
+
     /**
      * Set the owner of the projectile to a new PhysicsEntity.
      * @param owner the new owner.

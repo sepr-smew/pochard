@@ -183,9 +183,9 @@ public abstract class PhysicsEntity extends Entity {
     public void endSensorContact(PhysicsEntity other, Contact contact) {
     }
 
-    public void preSolve(PhysicsEntity other , Contact contact, Manifold manifold) {
+    public void preSolve(PhysicsEntity other, Contact contact, Manifold manifold) {
     }
 
-    public void postSolve(PhysicsEntity other , Contact contact, ContactImpulse contactImpulse) {
+    public void postSolve(PhysicsEntity other, Contact contact, ContactImpulse contactImpulse) {
     }
 }
