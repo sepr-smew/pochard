@@ -173,7 +173,7 @@ public abstract class Character extends PhysicsEntity {
         super.preSolve(other, contact, manifold);
         // Disabling contact here rather than changing collision mask so we can still
         // tell when the player is contacting something to prevent re-enabling while inside an object
-        if (!shouldCheckCollision && contact.isEnabled() && other.getCategoryBits() != BOUNDS_BITS){
+        if (!shouldCheckCollision && contact.isEnabled() && 0 == (other.getCategoryBits() & BOUNDS_BITS)){
             contact.setEnabled(false);
         }
     }

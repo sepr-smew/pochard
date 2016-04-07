@@ -21,10 +21,11 @@ public class RayCast {
         @Override
         public float reportRayFixture(Fixture fixture, Vector2 point, Vector2 normal, float fraction){
             /* if multiple fixtures are found, because we return the fraction, subsequent fixtures
-             * will always be closer than the previous ones, but we may not always see more distant fixures
+             * will always be closer than the previous ones, but we may not always see more distant fixtures
              * past the first intersection found.
              */
-            this.clear = (fixture.getFilterData().categoryBits & maskBits) == 0;
+            if (fraction<this.fraction)
+                this.clear = (fixture.getFilterData().categoryBits & maskBits) == 0;
             this.fraction = fraction;
             /* this reduces the length of the ray to the currently found intersection
              * this is done because fixtures are not necessarily reported in

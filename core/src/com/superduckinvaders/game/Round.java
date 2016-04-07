@@ -26,6 +26,7 @@ import com.superduckinvaders.game.util.CustomContactListener;
 import com.superduckinvaders.game.util.RayCast;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -214,11 +215,13 @@ public class Round {
         //Assumes square tiles!
         float tw = collisionLayer.getTileWidth();
 
+        short bounds = PhysicsEntity.BOUNDS_BITS | PhysicsEntity.WORLD_BITS;
+        
         // 4 map edge objects
-        new Obstacle(this, -tw,      -tw,       tw,          mapHeight+tw, PhysicsEntity.BOUNDS_BITS);
-        new Obstacle(this, -tw,      -tw,       mapWidth+tw, tw,           PhysicsEntity.BOUNDS_BITS);
-        new Obstacle(this, -tw,      mapHeight, mapWidth+tw, tw,           PhysicsEntity.BOUNDS_BITS);
-        new Obstacle(this, mapWidth, -tw,       tw,          mapHeight+tw, PhysicsEntity.BOUNDS_BITS);
+        new Obstacle(this, -tw,      -tw,       tw,          mapHeight+tw, bounds);
+        new Obstacle(this, -tw,      -tw,       mapWidth+tw, tw,           bounds);
+        new Obstacle(this, -tw,      mapHeight, mapWidth+tw, tw,           bounds);
+        new Obstacle(this, mapWidth, -tw,       tw,          mapHeight+tw, bounds);
     }
 
     /**
@@ -372,16 +375,27 @@ public class Round {
         Vector2[] corners = {new Vector2( width/2,  height/2),
                 new Vector2(-width/2,  height/2),
                 new Vector2(-width/2,  -height/2),
-                new Vector2(width/2,  -height/2)
+                new Vector2(width/2,  -height/2),
+                Vector2.Zero.cpy()
         };
-        boolean result = true;
 
-        for (Vector2 corner : corners){
-            result = result && rayCast(corner.cpy().add(pos), corner.cpy().add(target));
+        return !Arrays.stream(corners).anyMatch(
+                corner -> !rayCast(corner.cpy().add(pos.cpy()), corner.cpy().add(target.cpy()))
+        );
+    }
+    public boolean cornersCanSeeTarget(Vector2 pos, Vector2 size, Vector2 target){
+        float width  = size.x;
+        float height = size.y;
+        Vector2[] corners = {new Vector2( width/2,  height/2),
+                new Vector2(-width/2,  height/2),
+                new Vector2(-width/2,  -height/2),
+                new Vector2(width/2,  -height/2),
+                Vector2.Zero.cpy()
+        };
 
-        }
-
-        return result;
+        return !Arrays.stream(corners).anyMatch(
+                corner -> !rayCast(corner.cpy().add(pos.cpy()), target.cpy())
+        );
     }
 
     /**
@@ -509,6 +523,7 @@ public class Round {
         //int updateNumber =0, totalNumber=entities.size(), numMobs=0;
         for (int i = 0; i < entities.size(); i++) {
             Entity entity = entities.get(i);
+            Vector2 vector = entity.vectorTo(player.getCentre());
 
             if (entity.isRemoved()) {
                 if (entity instanceof Mob && ((Mob) entity).isDead()) {
@@ -522,7 +537,7 @@ public class Round {
                 }
                 entity.dispose();
                 entities.remove(i--);
-            } else if ((entity.distanceTo(player.getX(), player.getY()) < UPDATE_DISTANCE_X)&&(entity.distanceTo(player.getX(), player.getY()) < UPDATE_DISTANCE_Y)){
+            } else if (vector.x < UPDATE_DISTANCE_X && vector.y < UPDATE_DISTANCE_Y){
                 // Don't bother updating entities that aren't on screen.
                 entity.update(delta);
             }

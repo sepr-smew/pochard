@@ -267,6 +267,8 @@ public class GameScreen implements Screen {
             }
         }
 
+        uiBatch2.end();
+
         //DEBUGGING
 
         shapeRenderer.setProjectionMatrix(camera.combined);
@@ -274,26 +276,29 @@ public class GameScreen implements Screen {
         shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
 
 
-        round.getEntities().stream().filter(e -> e instanceof Mob).map(e -> (Mob)e).forEach(mob ->{
-            PathfindingAI.Coordinate c = ((PathfindingAI)mob.getAI()).target;
-            List<PathfindingAI.SearchNode> l = ((PathfindingAI)mob.getAI()).path_DEBUG;
-            shapeRenderer.setColor(1, 0, 1, 1);
-            if (l != null) {
-                for (PathfindingAI.SearchNode s : l){
-                    shapeRenderer.x(s.coord.vector(), 7);
-                }
-            }
-            shapeRenderer.setColor(0, 1, 1, 1);
-            if (c != null) {
-                shapeRenderer.x(c.vector(), 10);
-            }
-        });
+        round.getEntities().stream()
+                .filter(e -> e instanceof Mob)
+                .map(e -> (Mob)e)
+                .forEach(
+                    mob -> {
+                        PathfindingAI.Coordinate c = ((PathfindingAI)mob.getAI()).target;
+                        List<PathfindingAI.SearchNode> l = ((PathfindingAI)mob.getAI()).path_DEBUG;
+                        shapeRenderer.setColor(1, 0, 1, 1);
+                        if (l != null) {
+                            for (PathfindingAI.SearchNode s : l){
+                                shapeRenderer.x(s.coord.vector(), 7);
+                            }
+                        }
+                        shapeRenderer.setColor(0, 1, 1, 1);
+                        if (c != null) {
+                            shapeRenderer.x(c.vector(), 10);
+                        }
+                    });
 
         shapeRenderer.end();
 
         // END
 
-        uiBatch2.end();
         mapRenderer.getBatch().begin();
 //        mapBatch.begin();
         // Render overhang layer (draws over the player).

@@ -20,7 +20,7 @@ public class PathfindingAI extends AI {
     /**
      * How many iterations to use in the pathfinding algorithm.
      */
-    public final static int PATHFINDING_ITERATION_LIMIT = 20;
+    public final static int PATHFINDING_ITERATION_LIMIT = 40;
 
     /**
      * How often to update the AI.
@@ -99,7 +99,6 @@ public class PathfindingAI extends AI {
             target = FindPath(mob);
         }
 
-        // targetPoint = (target != null) ? target.vector() : new Vector2(playerPos).setLength(1f);
         if (target != null) {
             mob.applyVelocity(target.vector());
         }
@@ -113,6 +112,8 @@ public class PathfindingAI extends AI {
      * @return Returns a Coordinate for the path finding
      */
     private Coordinate FindPath(Mob mob) {
+        path_DEBUG = null;
+
         Vector2 mobCentre = mob.getCentre();
         Vector2 mobPos = mob.getPosition();
         Vector2 mobSize = mob.getSize();
@@ -122,12 +123,12 @@ public class PathfindingAI extends AI {
         Coordinate finalCoord = roundToTile(playerPos);
         boolean finalFound = false;
 
-        if (round.pathIsClear(mobPos, mobSize, playerPos)){
+        if (round.cornersCanSeeTarget(mobCentre, mobSize, playerPos)){
             if (new Vector2(playerPos).sub(mobCentre).len() < targetRange){
                 return null;
             }
             else {
-                path_DEBUG = null;
+
                 currentOffset = deltaOffsetLimit;
                 return new Coordinate(playerPos);
             }
@@ -147,7 +148,8 @@ public class PathfindingAI extends AI {
                 continue;
             }
 
-            if (currentCoord.inSameTile(finalCoord)) {
+//            if (currentCoord.inSameTile(finalCoord)) {
+            if (round.cornersCanSeeTarget(currentCoord.vector(), mobSize, finalCoord.vector())) {
                 finalCoord = currentCoord;
                 finalFound = true;
                 break;
@@ -163,14 +165,14 @@ public class PathfindingAI extends AI {
 
             for (Coordinate currentPerm : perm) {
 //                if (!visitedStates.containsKey(currentPerm) && !round.collidePoint(currentPerm.vector())) {
-                if (!visitedStates.containsKey(currentPerm) && !round.collideArea(currentPerm.vector().sub(halfSize), mobSize)) {
+                if (!visitedStates.containsKey(currentPerm) && !round.collideArea(currentPerm.vector().sub(halfSize.cpy()), mobSize.cpy())) {
                     fringe.add(currentPerm);
                     visitedStates.put(currentPerm, new SearchNode(currentState, currentPerm, currentState.iteration + 1));
                 }
             }
         }
+
         if (!finalFound) {
-            path_DEBUG = null;
             return null;
         } else {
             SearchNode resultNode;
@@ -215,8 +217,10 @@ public class PathfindingAI extends AI {
      * @return the Coordinate of the tile
      */
     public Coordinate roundToTile(float x, float y){
-        int nx = (int)(((int)(x/tileWidth)+0.5f) * tileWidth);
-        int ny = (int)(((int)(y/tileHeight)+0.5f) * tileHeight);
+//        int nx = (int)(((int)(x/tileWidth)+0.5f) * tileWidth);
+//        int ny = (int)(((int)(y/tileHeight)+0.5f) * tileHeight);
+        int nx = (int)(Math.round(x/tileWidth) * tileWidth);
+        int ny = (int)(Math.round(y/tileHeight) * tileHeight);
         return new Coordinate(nx, ny);
     }
 
