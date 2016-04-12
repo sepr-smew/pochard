@@ -234,15 +234,16 @@ public class Round {
      */
 
     private void spawnRandomMobs(int amount, int minX, int minY, int maxX, int maxY) {
+        Player player = getPlayer();
         for (int i = 0; i < amount;) {
             int x = MathUtils.random(minX, maxX);
             int y = MathUtils.random(minY, maxY);
-            if (!collidePoint(x, y))
+            if (!collidePoint(x, y) && (player.distanceTo(x, y) > 500))
                 if (MathUtils.random()>0.2) {
-                    entities.add(new MeleeMob(this, getPlayer().getX() + x, getPlayer().getY() + y, 100, 100, 15));
+                    entities.add(new MeleeMob(this, x, y, 100, 100, 15));
                 }
                 else {
-                    entities.add(new RangedMob(this, getPlayer().getX() + x, getPlayer().getY() + y, 100, 100, 25));
+                    entities.add(new RangedMob(this, x, y, 100, 100, 25));
                 }
             i++;
         }
