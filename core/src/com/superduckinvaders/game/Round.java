@@ -25,9 +25,7 @@ import com.superduckinvaders.game.util.Collision;
 import com.superduckinvaders.game.util.CustomContactListener;
 import com.superduckinvaders.game.util.RayCast;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 /**
  * Represents a round of the game played on one level with a single objective.
@@ -78,6 +76,9 @@ public class Round {
      * Array of all entities currently in the Round.
      */
     private List<Entity> entities;
+    private List<Entity> newEntities;
+
+    private Comparator<Entity> entityComparator = new Entity.EntityComparator();
 
     /**
      * The current objective.
@@ -124,8 +125,9 @@ public class Round {
 
         player = new Player(this, startX, startY);
 
-        entities = new ArrayList<Entity>(128);
-        entities.add(player);
+        entities = new ArrayList<>();
+        newEntities = new ArrayList<>();
+        addEntity(player);
 
         spawnRandomMobs(mobCount, 0, 0, getMapWidth(), getMapHeight());
 
@@ -147,7 +149,7 @@ public class Round {
                     Item objective = new CollectItem(this, objectiveX, objectiveY, Assets.flag);
                     setObjective(new CollectObjective(this, Objective.objectiveType.COLLECT, objective));
 
-                    entities.add(objective);
+                    addEntity(objective);
                     break;
                 }
                 case KILL: {
@@ -233,17 +235,17 @@ public class Round {
      * @param maxY the maximum y distance from the player to spawn the mobs
      */
 
-    private void spawnRandomMobs(int amount, int minX, int minY, int maxX, int maxY) {
+    public void spawnRandomMobs(int amount, int minX, int minY, int maxX, int maxY) {
         Player player = getPlayer();
         for (int i = 0; i < amount;) {
             int x = MathUtils.random(minX, maxX);
             int y = MathUtils.random(minY, maxY);
             if (!collidePoint(x, y) && (player.distanceTo(x, y) > 500))
                 if (MathUtils.random()>0.2) {
-                    entities.add(new MeleeMob(this, x, y, 100, 100, 15));
+                    addEntity(new MeleeMob(this, x, y, 100, 100, 15));
                 }
                 else {
-                    entities.add(new RangedMob(this, x, y, 100, 100, 25));
+                    addEntity(new RangedMob(this, x, y, 100, 100, 25));
                 }
             i++;
         }
@@ -422,7 +424,7 @@ public class Round {
      * Gets all entities in the round
      * @return the list of all entities currently in the Round
      */
-    public List<Entity> getEntities() {
+    public Collection<Entity> getEntities() {
         return entities;
     }
 
@@ -432,7 +434,12 @@ public class Round {
      * @param newEntity new entity of any type
      */
     public void addEntity(Entity newEntity) {
-        entities.add(newEntity);
+        newEntities.add(newEntity);
+    }
+
+    private void addAddNewEntities() {
+        entities.addAll(newEntities);
+        newEntities.clear();
     }
 
     /**
@@ -467,7 +474,7 @@ public class Round {
      * @param owner           the owner of the projectile (i.e. the one who fired it)
      */
     public void createProjectile(Vector2 pos, Vector2 velocity, int damage, PhysicsEntity owner) {
-        entities.add(new Projectile(this, pos, velocity, damage, owner));
+        addEntity(new Projectile(this, pos, velocity, damage, owner));
     }
     public void createProjectile(float x, float y, float dirX, float dirY, float speed, float velocityXOffset, float velocityYOffset, int damage, PhysicsEntity owner) {
         createProjectile(new Vector2(x, y), new Vector2(dirX, dirY).setLength(speed).add(velocityXOffset, velocityYOffset), damage, owner);
@@ -483,7 +490,7 @@ public class Round {
      * @param animation the animation to use for the particle effect
      */
     public void createParticle(float x, float y, float duration, Animation animation) {
-        entities.add(new Particle(this, x , y, duration, animation));
+        addEntity(new Particle(this, x , y, duration, animation));
     }
 
     /**
@@ -495,7 +502,7 @@ public class Round {
      * @param time    how long the powerup should last for
      */
     public void createPowerup(float x, float y, PowerupManager.powerupTypes powerup, float time) {
-        entities.add(new PowerupItem(this, x, y, powerup, time));
+        addEntity(new PowerupItem(this, x, y, powerup, time));
     }
 
     /**
@@ -506,7 +513,28 @@ public class Round {
      * @param upgrade the upgrade to grant to the player
      */
     public void createUpgrade(int x, int y, Player.Upgrade upgrade) {
-        entities.add(new Upgrade(this, x, y, upgrade));
+        addEntity(new Upgrade(this, x, y, upgrade));
+    }
+
+    private void updateEntities(float delta){
+        Iterator<Entity> iterator = entities.iterator();
+        while (iterator.hasNext()) {
+            Entity entity = iterator.next();
+            Vector2 vector = entity.vectorTo(player.getCentre());
+
+            if (entity.isRemoved()) {
+                if (entity instanceof Mob && ((Mob) entity).isDead()) {
+                    int score = (int) (((Mob) entity).getScore()* (powerUpManager.getIsActive(PowerupManager.powerupTypes.SCORE_MULTIPLIER) ? Player.PLAYER_SCORE_MULTIPLIER : 1));
+                    player.addScore(score);
+                    floatyNumbersManager.createScoreNumber(score, entity.getX(), entity.getY());
+                }
+                entity.dispose();
+                iterator.remove();
+            } else if (vector.x < UPDATE_DISTANCE_X && vector.y < UPDATE_DISTANCE_Y){
+                // Don't bother updating entities that aren't on screen.
+                entity.update(delta);
+            }
+        }
     }
 
 
@@ -516,41 +544,21 @@ public class Round {
      * @param delta the time elapsed since the last update
      */
     public void update(float delta) {
+        if (player.isDead()) {
+            parent.showLoseScreen();
+        }
+
         world.step(delta, 6, 2);
 
         powerUpManager.update(delta);
         floatyNumbersManager.update(delta);
 
-        //int updateNumber =0, totalNumber=entities.size(), numMobs=0;
-        for (int i = 0; i < entities.size(); i++) {
-            Entity entity = entities.get(i);
-            Vector2 vector = entity.vectorTo(player.getCentre());
-
-            if (entity.isRemoved()) {
-                if (entity instanceof Mob && ((Mob) entity).isDead()) {
-                    int score = (int) (((Mob) entity).getScore()* (powerUpManager.getIsActive(PowerupManager.powerupTypes.SCORE_MULTIPLIER) ? Player.PLAYER_SCORE_MULTIPLIER : 1));
-                    player.addScore(score);
-                    floatyNumbersManager.createScoreNumber(score, entity.getX(), entity.getY());
-                    if(objective.getObjectiveType()== Objective.objectiveType.BOSS){
-                        spawnRandomMobs(1, 0, 0, 1000, 1000);
-                    }
-
-                }
-                entity.dispose();
-                entities.remove(i--);
-            } else if (vector.x < UPDATE_DISTANCE_X && vector.y < UPDATE_DISTANCE_Y){
-                // Don't bother updating entities that aren't on screen.
-                entity.update(delta);
-            }
-        }
+        updateEntities(delta);
 
         if (objective != null) {
             objective.update(delta);
-
             if (objective.getStatus() == Objective.ObjectiveStatus.COMPLETED) {
                 parent.showWinScreen(player.getScore());
-            } else if (player.isDead()) {
-                parent.showLoseScreen();
             }
         }
 
@@ -559,7 +567,9 @@ public class Round {
                 createProjectile(MathUtils.random(300, 1500), MathUtils.random(300, 1500), MathUtils.random(-1f, 1f), MathUtils.random(-1f, 1f), 1000, 0, 0, 0, player);
             }
         }
-        //System.out.println("total:"+totalNumber+" updated:"+updateNumber+" numMobs:"+numMobs);
+
+        addAddNewEntities();
+        entities.sort(entityComparator);
     }
 
 

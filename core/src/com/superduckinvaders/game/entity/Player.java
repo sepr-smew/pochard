@@ -33,11 +33,7 @@ public class Player extends Character {
      * How much the player's speed should be multiplied by if they are swimming.
      */
     public static final float WATER_SPEED_MODIFIER=1.6f;
-
-    /**
-     * Player's standard attack delay (how many seconds between attacks).
-     */
-    public static final int PLAYER_ATTACK_DELAY = 1;
+    
 
     /**
      * How much the Player's score increases should be multiplied by if they have the score multiplier powerup.
@@ -89,11 +85,6 @@ public class Player extends Character {
      * Whether the player is meleeing or not
      */
     private boolean isMeleeing = false;
-
-    /**
-     * How long it has been since the Player last attacked.
-     */
-    private float attackTimer = 0;
 
     /**
      * 2D array storing the offset from the bottom left of the sprite at which projectiles will be spawned.
@@ -165,9 +156,10 @@ public class Player extends Character {
     public Player(Round parent, int x, int y) {
         super(parent, x, y, PLAYER_HEALTH);
         enemyBits = MOB_BITS | PROJECTILE_BITS;
-        MELEE_RANGE = 40f;
         RANGED_DAMAGE = 50;
+        MELEE_ATTACK_COOLDOWN = 0.05f;
         createDynamicBody(PLAYER_BITS, ALL_BITS, NO_GROUP, false);
+        createMeleeSensor(40f);
 
         projectileDrawPoint = new Vector2[]{
                 new Vector2(7 - boundsX, 26 - boundsY),  // Front
@@ -266,8 +258,8 @@ public class Player extends Character {
     }
 
     @Override
-    protected boolean meleeAttack(Vector2 direction, int damage) {
-        if (super.meleeAttack(direction, damage)){
+    protected boolean meleeAttack(int damage) {
+        if (super.meleeAttack(damage)){
             Assets.saberHit.play(0.05f);
             return true;
         }
@@ -289,15 +281,14 @@ public class Player extends Character {
      * Additional update function for the melee attack state
      * Logic for ending melee state and melee hit detection logic
      * Utilises the MeleeHitbox class to create a rectangular hitbox dependant on the direction the player is facing
+     *  -- not any more it doesn't!
      */
     private void updateMeleeAttack(){
         //End condition for melee state
         if(stateTime>=Assets.playerMelee.getAnimationDuration(facing)-Assets.playerMelee.getFrameDuration(facing)/2){
             isMeleeing=false;
         }
-        if (isMeleeing){
-            meleeAttack(new Vector2(0, -1).rotate(-45*facing.index()), 50);
-        }
+        meleeAttack(50);
     }
 
     /**
@@ -332,6 +323,13 @@ public class Player extends Character {
         return boundsY;
     }
 
+    @Override
+    public boolean canBeDamaged(){
+        return !(isFlying ||
+               parent.powerUpManager.getIsActive(PowerupManager.powerupTypes.INVULNERABLE) ||
+               isDamageFrames);
+    }
+
     /**
      * Damages the Player, taking into account the possibility of invulnerability.
      * @param health the number of points to damage by
@@ -339,13 +337,10 @@ public class Player extends Character {
     @Override
     public void damage(int health) {
         // Only apply damage if we don't have the invulnerability powerup/ invincibility frames
-        if(!isFlying) {
-            if (!(parent.powerUpManager.getIsActive(PowerupManager.powerupTypes.INVULNERABLE) && !isDamageFrames)) {
-                isDamageFrames = true;
-                damageFramesTimer = DAMAGE_FRAMES_LENGTH;
-                this.currentHealth -= health;
-                parent.floatyNumbersManager.createDamageNumber(health, getX(), getY());
-            }
+        if(canBeDamaged()) {
+            isDamageFrames = true;
+            damageFramesTimer = DAMAGE_FRAMES_LENGTH;
+            super.damage(health);
         }
     }
 
@@ -367,9 +362,6 @@ public class Player extends Character {
 
         if(isMeleeing)
             updateMeleeAttack();
-
-        //update attack timer.
-        attackTimer += delta;
 
         //Update miscellaneous player inputs
         updatePlayerInputs();
@@ -421,8 +413,8 @@ public class Player extends Character {
         // Left mouse to attack.
         if (Gdx.input.isButtonPressed(Input.Buttons.LEFT) && !isFlying && !isMeleeing) {
             //Limits attack rate to attackTimer
-            if (attackTimer >= PLAYER_ATTACK_DELAY * (parent.powerUpManager.getIsActive(PowerupManager.powerupTypes.RATE_OF_FIRE) ? PLAYER_ATTACK_DELAY_MULTIPLIER : 1)) {
-                attackTimer = 0;
+            if (rangedAttackTimer >= RANGED_ATTACK_COOLDOWN * (parent.powerUpManager.getIsActive(PowerupManager.powerupTypes.RATE_OF_FIRE) ? PLAYER_ATTACK_DELAY_MULTIPLIER : 1)) {
+                rangedAttackTimer = 0;
 
                 //Update aim direction
                 Vector3 target3 = parent.unproject(Gdx.input.getX(), Gdx.input.getY());
@@ -548,7 +540,7 @@ public class Player extends Character {
          * @return the texture for the floor item
          */
         public TextureRegion getTextureForUpgrade() {
-            return this.texture;
+            return texture;
         }
     }
 }

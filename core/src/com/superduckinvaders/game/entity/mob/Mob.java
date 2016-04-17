@@ -45,6 +45,7 @@ public abstract class Mob extends Character {
      */
     private int speed;
 
+
     /**
      * Create a Mob
      * @param parent The round this mob resides in
@@ -117,16 +118,6 @@ public abstract class Mob extends Character {
     }
 
     /**
-     * Damages this Character's health by the specified number of points.
-     *
-     * @param health the number of points to damage
-     */
-    public void damage(int health) {
-        this.currentHealth -= health;
-        parent.floatyNumbersManager.createDamageNumber(health, getX(), getY());
-    }
-
-    /**
      * @return returns the walking texture set of the mob
      */
     public TextureSet getWalkingTextureSet() {
@@ -160,13 +151,16 @@ public abstract class Mob extends Character {
             powerup = PowerupManager.powerupTypes.RATE_OF_FIRE;
         }
 
-        if (powerup != null) {
-            parent.createPowerup(getX(), getY(), powerup, 10);
-        }
+        if (powerup != null) parent.createPowerup(getX(), getY(), powerup, 10);
 
-        if (parent.getObjective().getObjectiveType() == Objective.objectiveType.KILL) {
-            KillObjective objective = (KillObjective) parent.getObjective();
-            objective.decrementKills();
+        switch(parent.getObjective().getObjectiveType()){
+            case KILL:
+                KillObjective objective = (KillObjective) parent.getObjective();
+                objective.decrementKills();
+                break;
+            case BOSS:
+                parent.spawnRandomMobs(1, 0, 0, 1000, 1000);
+                break;
         }
     }
 

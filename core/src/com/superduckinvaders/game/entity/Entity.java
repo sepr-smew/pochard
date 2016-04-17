@@ -254,6 +254,8 @@ public abstract class Entity {
 
         @Override
         public int compare(Entity o1, Entity o2) {
+            return new Float(o1.getY()).compareTo(o2.getY());
+            /*
             //front of list rendered first
             if (o1 instanceof Character) {
                 if (o2 instanceof Character || o2 instanceof Item) {
@@ -293,7 +295,7 @@ public abstract class Entity {
                         return -1;
                     }
                 }
-            }
+            }*/
         }
 
     }

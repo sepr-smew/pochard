@@ -4,6 +4,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
 import com.superduckinvaders.game.Round;
 import com.superduckinvaders.game.assets.TextureSet;
+import com.superduckinvaders.game.entity.item.PowerupManager;
 
 import java.util.ArrayList;
 
@@ -32,18 +33,27 @@ public abstract class Character extends PhysicsEntity {
      */
     protected int maximumHealth, currentHealth;
 
-    protected static float MELEE_RANGE = 30f;
-    protected static float MELEE_ATTACK_COOLDOWN = 0.2f;
-    protected float meleeAttackTimer = 0f;
-    protected static float RANGED_RANGE = 30f;
-    protected static float RANGED_ATTACK_COOLDOWN = 0.2f;
-    protected float rangedAttackTimer = 0f;
+    protected float MELEE_ATTACK_COOLDOWN = 1f;
+    protected float RANGED_ATTACK_COOLDOWN = 1f;
+
+    protected float PROJECTILE_SPEED = 300;
     protected int RANGED_DAMAGE = 1;
+
+    protected float rangedAttackTimer = 0f;
+    protected float meleeAttackTimer = 0f;
+
 
     protected short enemyBits = 0;
     protected ArrayList<PhysicsEntity> enemiesInRange;
 
     public int waterBlockCount = 0;
+
+    protected float dementedOffset = 0f;
+    protected float dementedLerpTimer = 0f;
+    protected float dementedLerpValue = 0f;
+
+    protected static float DEMENTED_DURATION = 10f;
+    protected float dementedTimer = 0f;
 
     /**
      * Initialises this Character.
@@ -60,18 +70,16 @@ public abstract class Character extends PhysicsEntity {
         enemiesInRange = new ArrayList<>();
     }
 
-    @Override
-    public void createBody(BodyDef.BodyType bodyType, short categoryBits, short maskBits, short groupIndex, boolean isSensor){
-        super.createBody(bodyType, categoryBits, maskBits, groupIndex, isSensor);
-
+    public void createMeleeSensor(float meleeRange) {
+        if (meleeRange<=0) return;
         CircleShape meleeSensorShape = new CircleShape();
-        meleeSensorShape.setRadius(MELEE_RANGE / PIXELS_PER_METRE);
+        meleeSensorShape.setRadius(meleeRange / PIXELS_PER_METRE);
 
         FixtureDef meleeFixtureDef = new FixtureDef();
         meleeFixtureDef.shape = meleeSensorShape;
         meleeFixtureDef.isSensor = true;
 
-        meleeFixtureDef.filter.categoryBits = categoryBits;
+        meleeFixtureDef.filter.categoryBits = getCategoryBits();
         meleeFixtureDef.filter.maskBits = enemyBits;
         meleeFixtureDef.filter.groupIndex = SENSOR_GROUP;
 
@@ -87,6 +95,22 @@ public abstract class Character extends PhysicsEntity {
      */
     public TextureSet.Facing getFacing() {
         return facing;
+    }
+
+    public boolean isDemented() {
+        return dementedTimer>0f;
+    }
+
+    public void setDemented(boolean demented) {
+        this.dementedTimer = demented ? DEMENTED_DURATION : 0f;
+    }
+
+    @Override
+    public void setVelocity(Vector2 targetVelocity, float limit) {
+        if (isDemented()) {
+            targetVelocity.rotateRad(dementedOffset);
+        }
+        super.setVelocity(targetVelocity, limit);
     }
 
     /**
@@ -140,7 +164,11 @@ public abstract class Character extends PhysicsEntity {
      *
      * @param health the number of points to damage
      */
-    public abstract void damage(int health);
+    public void damage(int health){
+        currentHealth -= health;
+        currentHealth = Math.max(0, currentHealth);
+        parent.floatyNumbersManager.createDamageNumber(health, getX(), getY());
+    };
 
     /**
      * Returns if the character is dead
@@ -196,14 +224,17 @@ public abstract class Character extends PhysicsEntity {
 
     }
 
+    public boolean canBeDamaged(){
+        return true;
+    }
+
     /**
      * Causes this Character to use a melee attack.
      *
-     * @param direction the attack direction.
      * @param damage how much damage the attack deals.
      * @return whether the attack has occured.
      */
-    protected boolean meleeAttack(Vector2 direction, int damage) {
+    protected boolean meleeAttack(int damage) {
 //        if (isStunned()) {
 //            return false;
 //        }
@@ -214,8 +245,10 @@ public abstract class Character extends PhysicsEntity {
                 if (directionTo(entity.getCentre()) == facing) {
                     if (entity instanceof Character) {
                         Character character = (Character) entity;
-                        character.damage(damage);
-                        character.setVelocity(direction.cpy().setLength(400f));
+                        if (canBeDamaged()) {
+                            character.damage(damage);
+                            character.setVelocity(vectorTo(entity.getCentre()).cpy().setLength(400f));
+                        }
                     } else if (entity instanceof Projectile){
                         Projectile projectile = (Projectile) entity;
                         float speed = projectile.getVelocity().len();
@@ -240,6 +273,17 @@ public abstract class Character extends PhysicsEntity {
     public void update(float delta) {
 
         meleeAttackTimer += delta;
+        rangedAttackTimer += delta;
+
+        if (isDemented()){
+            dementedTimer -= delta;
+            dementedLerpTimer += delta;
+            if (dementedLerpTimer > 1f) {
+                dementedLerpTimer = 0f;
+                dementedLerpValue = (float)(Math.random()*Math.PI*2);
+            }
+            dementedOffset = (dementedLerpValue-dementedOffset)*dementedLerpTimer;
+        }
 
         // Update Character facing.
         Vector2 velocity = getVelocity();

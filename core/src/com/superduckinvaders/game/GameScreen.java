@@ -4,7 +4,11 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.Pixmap;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.glutils.FrameBuffer;
+import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.maps.tiled.TiledMapTile;
 import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
@@ -15,7 +19,6 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
 import com.badlogic.gdx.utils.Align;
-import com.superduckinvaders.game.ai.AI;
 import com.superduckinvaders.game.ai.PathfindingAI;
 import com.superduckinvaders.game.assets.Assets;
 import com.superduckinvaders.game.entity.Entity;
@@ -95,6 +98,14 @@ public class GameScreen implements Screen {
 
     ShapeRenderer shapeRenderer;
 
+    ShaderProgram shaderDistort;
+    ShaderProgram shaderColor;
+
+    FrameBuffer frameBuffer;
+    SpriteBatch fbBatch;
+
+    float shaderTimer = 0f;
+
 
 
 
@@ -109,6 +120,17 @@ public class GameScreen implements Screen {
 
         debugRenderer = new Box2DDebugRenderer();
         shapeRenderer = new ShapeRenderer();
+
+        shaderDistort = new ShaderProgram(Gdx.files.internal("shaders/default.vsh"), Gdx.files.internal("shaders/distort.fsh"));
+        if (!shaderDistort.isCompiled())
+            System.out.print(shaderDistort.getLog());
+
+        shaderColor = new ShaderProgram(Gdx.files.internal("shaders/default.vsh"), Gdx.files.internal("shaders/colour.fsh"));
+        if (!shaderColor.isCompiled())
+            System.out.print(shaderColor.getLog());
+
+        initialiseFrameBuffer(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+
     }
 
     /**
@@ -179,7 +201,16 @@ public class GameScreen implements Screen {
             }
         }
 
+    }
 
+    public void initialiseFrameBuffer(int screenWidth, int screenHeight){
+        if(frameBuffer != null) frameBuffer.dispose();
+
+        frameBuffer = new FrameBuffer(Pixmap.Format.RGB888, screenWidth, screenHeight, false);
+        frameBuffer.getColorBufferTexture().setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+
+        if(fbBatch != null) fbBatch.dispose();
+        fbBatch = new SpriteBatch();
     }
 
 
@@ -190,18 +221,15 @@ public class GameScreen implements Screen {
     @Override
     public void render(float delta) {
         round.update(delta);
-
-        //Update render order of entities
-        try {
-            round.getEntities().sort(new Entity.EntityComparator());
-        } catch (IllegalArgumentException e) {
-        }
+        shaderTimer += delta;
 
         Gdx.gl.glClearColor(0, 0, 0, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
         // Centre the camera on the player.
         updateCamera();
+
+        frameBuffer.begin();
 
         spriteBatch.setProjectionMatrix(camera.combined);
         uiBatch2.setProjectionMatrix(camera.combined.cpy().scl(0.5f));
@@ -231,13 +259,15 @@ public class GameScreen implements Screen {
         debugMatrix = new Matrix4(camera.combined);
         debugMatrix.scale(PhysicsEntity.PIXELS_PER_METRE, PhysicsEntity.PIXELS_PER_METRE, 1f);
         debugRenderer.render(round.world, debugMatrix);
-        spriteBatch.begin();
-        // Draw all entities.
-        for (Entity entity : round.getEntities()) {
-            entity.render(spriteBatch);
-        }
 
+
+        // Draw all entities.
+        spriteBatch.begin();
+
+        for (Entity entity : round.getEntities())
+            entity.render(spriteBatch);
         spriteBatch.end();
+
         uiBatch2.begin();
 
         round.floatyNumbersManager.render(uiBatch2);
@@ -247,9 +277,10 @@ public class GameScreen implements Screen {
             if (entity instanceof Mob) {
                 Mob mob = (Mob) entity;
                 float offsetX = mob.getX() * 2 - mob.getWidth() / 2;
-
                 float offsetY = mob.getY() * 2 + mob.getHeight() * 2;
 
+
+                // don't like but cba fixing - damn you pochard.
                 if (mob instanceof BossMob) {
                     offsetX += 40;
                     offsetY += 15;
@@ -272,9 +303,7 @@ public class GameScreen implements Screen {
         //DEBUGGING
 
         shapeRenderer.setProjectionMatrix(camera.combined);
-
         shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
-
 
         round.getEntities().stream()
                 .filter(e -> e instanceof Mob)
@@ -300,13 +329,26 @@ public class GameScreen implements Screen {
         // END
 
         mapRenderer.getBatch().begin();
-//        mapBatch.begin();
-        // Render overhang layer (draws over the player).
         if (round.getOverhangLayer() != null) {
             mapRenderer.renderTileLayer(round.getOverhangLayer());
         }
-
         mapRenderer.getBatch().end();
+
+        frameBuffer.end();
+
+
+        fbBatch.begin();
+
+        if (getRound().getPlayer().isDemented()) {
+            fbBatch.setShader(shaderDistort);
+            shaderDistort.setUniformf("sinOmega", 6 + (float) (Math.sin(shaderTimer) * 2));
+            shaderDistort.setUniformf("sinAlpha", (float) (shaderTimer % (2 * Math.PI)));
+            shaderDistort.setUniformf("magnitude", (float) (0.10f * Math.sin(shaderTimer * 3)));
+        }
+
+        fbBatch.draw(frameBuffer.getColorBufferTexture(), 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), 0, 0, 1, 1);
+        fbBatch.end();
+
 //        mapBatch.end();
 
         uiBatch.begin();
@@ -416,6 +458,7 @@ public class GameScreen implements Screen {
      */
     @Override
     public void resize(int width, int height) {
+        initialiseFrameBuffer(width, height);
     }
 
     /**
@@ -448,6 +491,8 @@ public class GameScreen implements Screen {
         mapRenderer.dispose();
         spriteBatch.dispose();
         uiBatch.dispose();
+        shaderColor.dispose();
+        shaderDistort.dispose();
     }
 
 }
