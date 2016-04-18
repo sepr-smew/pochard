@@ -246,12 +246,12 @@ public class GameScreen implements Screen {
 
         shaderDistort.begin();
         shaderDistort.setUniformf("sinOmega", 5 + (float) (Math.sin(shaderTimer*2) * 2));
-        shaderDistort.setUniformf("sinAlpha", (float) (shaderTimer % (1.5f * Math.PI)));
+        shaderDistort.setUniformf("sinAlpha", (float) (shaderTimer % (Math.PI*2)));
         shaderDistort.setUniformf("magnitude", (float) (0.10f * Math.sin(shaderTimer * 3)));
         shaderDistort.end();
 
         shaderColor.begin();
-        shaderColor.setUniformf("colorDelta", (shaderTimer/5f) % 180f);
+        shaderColor.setUniformf("colorDelta", (shaderTimer/6f) % 180f);
         shaderColor.end();
 
         Gdx.gl.glClearColor(0, 0, 0, 1);

@@ -280,7 +280,7 @@ public abstract class Character extends PhysicsEntity {
             dementedLerpTimer += delta;
             if (dementedLerpTimer > 1f) {
                 dementedLerpTimer = 0f;
-                dementedLerpValue = (float)(Math.random()*Math.PI*2);
+                dementedLerpValue = (float)((Math.random()-0.5)*Math.PI*2);
             }
             dementedOffset = (dementedLerpValue-dementedOffset)*dementedLerpTimer;
         }
