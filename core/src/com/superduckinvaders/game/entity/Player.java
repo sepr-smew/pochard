@@ -33,7 +33,7 @@ public class Player extends Character {
      * How much the player's speed should be multiplied by if they are swimming.
      */
     public static final float WATER_SPEED_MODIFIER=1.6f;
-    
+
 
     /**
      * How much the Player's score increases should be multiplied by if they have the score multiplier powerup.

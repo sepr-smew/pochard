@@ -245,7 +245,7 @@ public abstract class Character extends PhysicsEntity {
                 if (directionTo(entity.getCentre()) == facing) {
                     if (entity instanceof Character) {
                         Character character = (Character) entity;
-                        if (canBeDamaged()) {
+                        if (character.canBeDamaged()) {
                             character.damage(damage);
                             character.setVelocity(vectorTo(entity.getCentre()).cpy().setLength(400f));
                         }

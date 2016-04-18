@@ -213,6 +213,20 @@ public class GameScreen implements Screen {
         fbBatch = new SpriteBatch();
     }
 
+    private void renderMapLower(){
+        // Render base and collision layers.
+        mapRenderer.setView(camera);
+        mapRenderer.getBatch().begin();
+        mapRenderer.renderTileLayer(round.getBaseLayer());
+        mapRenderer.renderTileLayer(round.getCollisionLayer());
+        mapRenderer.renderTileLayer(round.getWaterEdgeLayer());
+
+        // Render randomly-chosen obstacles layer.
+        if (round.getObstaclesLayer() != null) {
+            mapRenderer.renderTileLayer(round.getObstaclesLayer());
+        }
+    }
+
 
     /**
      * Main game loop.
@@ -234,21 +248,11 @@ public class GameScreen implements Screen {
         spriteBatch.setProjectionMatrix(camera.combined);
         uiBatch2.setProjectionMatrix(camera.combined.cpy().scl(0.5f));
 
-        // Render base and collision layers.
-        mapRenderer.setView(camera);
-        mapRenderer.getBatch().begin();
-        mapRenderer.renderTileLayer(round.getBaseLayer());
-        mapRenderer.renderTileLayer(round.getCollisionLayer());
-        mapRenderer.renderTileLayer(round.getWaterEdgeLayer());
-//
-//        // Render randomly-chosen obstacles layer.
-        if (round.getObstaclesLayer() != null) {
-            mapRenderer.renderTileLayer(round.getObstaclesLayer());
-        }
+        renderMapLower();
 
         // Wait for half a second to elapse then call updateWaterAnimations
         // This could certainly be handled using an Action if you are using Scene2D
-        elapsedSinceAnimation += Gdx.graphics.getDeltaTime();
+        elapsedSinceAnimation += delta;
         if(elapsedSinceAnimation > 0.5f){
             updateWaterAnimations();
             elapsedSinceAnimation = 0.0f;
