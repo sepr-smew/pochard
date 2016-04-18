@@ -56,7 +56,7 @@ public class GameScreen implements Screen {
     /**
      * The sprite batches for rendering.
      */
-    private SpriteBatch spriteBatch, uiBatch, uiBatch2;
+    private SpriteBatch spriteBatch;
 
     /**
      * The Round this GameScreen renders.
@@ -129,7 +129,50 @@ public class GameScreen implements Screen {
         if (!shaderColor.isCompiled())
             System.out.print(shaderColor.getLog());
 
+        spriteBatch = new SpriteBatch();
+        fbBatch = new SpriteBatch();
+
         initialiseFrameBuffer(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+
+        camera = new OrthographicCamera(DuckGame.GAME_WIDTH/SCALE, DuckGame.GAME_HEIGHT/SCALE);
+//        camera.zoom -= 0.5;
+
+
+        mapRenderer = new OrthogonalTiledMapRenderer(round.getMap(), spriteBatch);
+
+        // We created a second set of tiles for Water animations
+        // For the record, this is bad for performance, use a single tileset if you can help it
+        // Get a reference to the tileset named "Water"
+        TiledMapTileSet tileset =  round.getMap().getTileSets().getTileSet("Tileset");
+
+
+        // Now we are going to loop through all of the tiles in the Water tileset
+        // and get any TiledMapTile with the property "WaterFrame" set
+        // We then store it in a map with the frame as the key and the Tile as the value
+        waterTiles = new HashMap<>();
+        for(TiledMapTile tile:tileset){
+            Object property = tile.getProperties().get("water");
+            if(property != null)
+                waterTiles.put((String)property,tile);
+        }
+
+        // Now we want to get a reference to every single cell ( Tile instance ) in the map
+        // that refers to a water cell.  Loop through the entire world, checking if a cell's tile
+        // contains the WaterFrame property.  If it does, add to the waterCellsInScene array
+        // Note, this only pays attention to the very first layer of tiles.
+        // If you want to support animation across multiple layers you will have to loop through each
+        waterCellsInScene = new ArrayList<TiledMapTileLayer.Cell>();
+        TiledMapTileLayer layer = (TiledMapTileLayer) round.getMap().getLayers().get(0);
+        for(int x = 0; x < layer.getWidth();x++){
+            for(int y = 0; y < layer.getHeight();y++){
+                TiledMapTileLayer.Cell cell = layer.getCell(x,y);
+                Object property = cell.getTile().getProperties().get("water");
+                if(property != null){
+                    waterCellsInScene.add(cell);
+                }
+            }
+        }
+
 
     }
 
@@ -157,50 +200,6 @@ public class GameScreen implements Screen {
     @Override
     public void show() {
         Gdx.input.setInputProcessor(null);
-
-        camera = new OrthographicCamera(DuckGame.GAME_WIDTH/SCALE, DuckGame.GAME_HEIGHT/SCALE);
-//        camera.zoom -= 0.5;
-
-//        mapBatch = new SpriteBatch();
-        spriteBatch = new SpriteBatch();
-        uiBatch = new SpriteBatch();
-        uiBatch2 = new SpriteBatch();
-
-        mapRenderer = new OrthogonalTiledMapRenderer(round.getMap());
-
-        // We created a second set of tiles for Water animations
-        // For the record, this is bad for performance, use a single tileset if you can help it
-        // Get a reference to the tileset named "Water"
-        TiledMapTileSet tileset =  round.getMap().getTileSets().getTileSet("Tileset");
-
-
-        // Now we are going to loop through all of the tiles in the Water tileset
-        // and get any TiledMapTile with the property "WaterFrame" set
-        // We then store it in a map with the frame as the key and the Tile as the value
-        waterTiles = new HashMap<String,TiledMapTile>();
-        for(TiledMapTile tile:tileset){
-            Object property = tile.getProperties().get("water");
-            if(property != null)
-                waterTiles.put((String)property,tile);
-        }
-
-        // Now we want to get a reference to every single cell ( Tile instance ) in the map
-        // that refers to a water cell.  Loop through the entire world, checking if a cell's tile
-        // contains the WaterFrame property.  If it does, add to the waterCellsInScene array
-        // Note, this only pays attention to the very first layer of tiles.
-        // If you want to support animation across multiple layers you will have to loop through each
-        waterCellsInScene = new ArrayList<TiledMapTileLayer.Cell>();
-        TiledMapTileLayer layer = (TiledMapTileLayer) round.getMap().getLayers().get(0);
-        for(int x = 0; x < layer.getWidth();x++){
-            for(int y = 0; y < layer.getHeight();y++){
-                TiledMapTileLayer.Cell cell = layer.getCell(x,y);
-                Object property = cell.getTile().getProperties().get("water");
-                if(property != null){
-                    waterCellsInScene.add(cell);
-                }
-            }
-        }
-
     }
 
     public void initialiseFrameBuffer(int screenWidth, int screenHeight){
@@ -209,14 +208,14 @@ public class GameScreen implements Screen {
         frameBuffer = new FrameBuffer(Pixmap.Format.RGB888, screenWidth, screenHeight, false);
         frameBuffer.getColorBufferTexture().setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
 
-        if(fbBatch != null) fbBatch.dispose();
-        fbBatch = new SpriteBatch();
+//        if(fbBatch != null) fbBatch.dispose();
+//        fbBatch = new SpriteBatch();
     }
 
     private void renderMapLower(){
         // Render base and collision layers.
         mapRenderer.setView(camera);
-        mapRenderer.getBatch().begin();
+
         mapRenderer.renderTileLayer(round.getBaseLayer());
         mapRenderer.renderTileLayer(round.getCollisionLayer());
         mapRenderer.renderTileLayer(round.getWaterEdgeLayer());
@@ -224,6 +223,14 @@ public class GameScreen implements Screen {
         // Render randomly-chosen obstacles layer.
         if (round.getObstaclesLayer() != null) {
             mapRenderer.renderTileLayer(round.getObstaclesLayer());
+        }
+
+    }
+
+    private void renderMapOverhang(){
+
+        if (round.getOverhangLayer() != null) {
+            mapRenderer.renderTileLayer(round.getOverhangLayer());
         }
     }
 
@@ -237,6 +244,16 @@ public class GameScreen implements Screen {
         round.update(delta);
         shaderTimer += delta;
 
+        shaderDistort.begin();
+        shaderDistort.setUniformf("sinOmega", 6 + (float) (Math.sin(shaderTimer) * 2));
+        shaderDistort.setUniformf("sinAlpha", (float) (shaderTimer % (2 * Math.PI)));
+        shaderDistort.setUniformf("magnitude", (float) (0.10f * Math.sin(shaderTimer * 3)));
+        shaderDistort.end();
+
+        shaderColor.begin();
+        shaderColor.setUniformf("colorDelta", (shaderTimer/5f) % 180f);
+        shaderColor.end();
+
         Gdx.gl.glClearColor(0, 0, 0, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
@@ -245,36 +262,48 @@ public class GameScreen implements Screen {
 
         frameBuffer.begin();
 
-        spriteBatch.setProjectionMatrix(camera.combined);
-        uiBatch2.setProjectionMatrix(camera.combined.cpy().scl(0.5f));
-
-        renderMapLower();
-
-        // Wait for half a second to elapse then call updateWaterAnimations
-        // This could certainly be handled using an Action if you are using Scene2D
-        elapsedSinceAnimation += delta;
-        if(elapsedSinceAnimation > 0.5f){
-            updateWaterAnimations();
-            elapsedSinceAnimation = 0.0f;
-        }
-
-        mapRenderer.getBatch().end();
+        updateWaterAnimations(delta);
 
         debugMatrix = new Matrix4(camera.combined);
         debugMatrix.scale(PhysicsEntity.PIXELS_PER_METRE, PhysicsEntity.PIXELS_PER_METRE, 1f);
-        debugRenderer.render(round.world, debugMatrix);
 
+
+        List<Mob> mobs = new ArrayList<>();
+        List<Mob> dementedMobs = new ArrayList<>();
 
         // Draw all entities.
         spriteBatch.begin();
 
-        for (Entity entity : round.getEntities())
+        renderMapLower();
+
+        spriteBatch.setShader(null);
+        spriteBatch.setProjectionMatrix(camera.combined.cpy());
+
+        for (Entity entity : round.getEntities()) {
+            if (entity instanceof Mob) {
+                Mob mob = (Mob)entity;
+                mobs.add(mob);
+
+                if (mob.isDemented()) {
+                    dementedMobs.add(mob);
+                    continue; // do not render demented mobs yet
+                }
+            }
+
             entity.render(spriteBatch);
-        spriteBatch.end();
+        }
 
-        uiBatch2.begin();
+        spriteBatch.setShader(shaderColor);
+        for (Mob mob : dementedMobs)
+            mob.render(spriteBatch);
 
-        round.floatyNumbersManager.render(uiBatch2);
+        spriteBatch.setShader(null);
+
+        renderMapOverhang();
+
+
+        spriteBatch.setProjectionMatrix(camera.combined.cpy().scl(0.5f));
+        round.floatyNumbersManager.render(spriteBatch);
 
         //Render health bars above enemies
         for (Entity entity : round.getEntities()) {
@@ -296,129 +325,116 @@ public class GameScreen implements Screen {
                     offsetY += 10;
                 }
 
-                uiBatch2.draw(Assets.healthEmpty, offsetX, offsetY);
+                spriteBatch.draw(Assets.healthEmpty, offsetX, offsetY);
                 Assets.healthFull.setRegionWidth((int) Math.max(0, ((float) mob.getCurrentHealth() / mob.getMaximumHealth()) * 100));
-                uiBatch2.draw(Assets.healthFull, offsetX, offsetY);
+                spriteBatch.draw(Assets.healthFull, offsetX, offsetY);
             }
         }
 
-        uiBatch2.end();
+
+        debugRenderer.render(round.world, debugMatrix);
+
+        spriteBatch.end();
 
         //DEBUGGING
 
-        shapeRenderer.setProjectionMatrix(camera.combined);
+        shapeRenderer.setProjectionMatrix(camera.combined.cpy());
         shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
 
-        round.getEntities().stream()
-                .filter(e -> e instanceof Mob)
-                .map(e -> (Mob)e)
-                .forEach(
-                    mob -> {
-                        PathfindingAI.Coordinate c = ((PathfindingAI)mob.getAI()).target;
-                        List<PathfindingAI.SearchNode> l = ((PathfindingAI)mob.getAI()).path_DEBUG;
-                        shapeRenderer.setColor(1, 0, 1, 1);
-                        if (l != null) {
-                            for (PathfindingAI.SearchNode s : l){
-                                shapeRenderer.x(s.coord.vector(), 7);
-                            }
-                        }
-                        shapeRenderer.setColor(0, 1, 1, 1);
-                        if (c != null) {
-                            shapeRenderer.x(c.vector(), 10);
-                        }
-                    });
+        for (Mob mob : mobs) {
+            PathfindingAI.Coordinate c = ((PathfindingAI) mob.getAI()).target;
+            List<PathfindingAI.SearchNode> l = ((PathfindingAI) mob.getAI()).path_DEBUG;
+            shapeRenderer.setColor(1, 0, 1, 1);
+            if (l != null) {
+                for (PathfindingAI.SearchNode s : l) {
+                    shapeRenderer.x(s.coord.vector(), 7);
+                }
+            }
+            shapeRenderer.setColor(0, 1, 1, 1);
+            if (c != null) {
+                shapeRenderer.x(c.vector(), 10);
+            }
+        }
 
         shapeRenderer.end();
-
         // END
 
-        mapRenderer.getBatch().begin();
-        if (round.getOverhangLayer() != null) {
-            mapRenderer.renderTileLayer(round.getOverhangLayer());
-        }
-        mapRenderer.getBatch().end();
-
         frameBuffer.end();
-
 
         fbBatch.begin();
 
         if (getRound().getPlayer().isDemented()) {
             fbBatch.setShader(shaderDistort);
-            shaderDistort.setUniformf("sinOmega", 6 + (float) (Math.sin(shaderTimer) * 2));
-            shaderDistort.setUniformf("sinAlpha", (float) (shaderTimer % (2 * Math.PI)));
-            shaderDistort.setUniformf("magnitude", (float) (0.10f * Math.sin(shaderTimer * 3)));
         }
 
         fbBatch.draw(frameBuffer.getColorBufferTexture(), 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), 0, 0, 1, 1);
-        fbBatch.end();
-
-//        mapBatch.end();
-
-        uiBatch.begin();
         // TODO: finish UI
         Assets.font.setColor(0f, 0f, 0f, 1.0f);
-        Assets.font.draw(uiBatch, "Objective: " + round.getObjective().getObjectiveString(), 10, 708);
-        Assets.font.draw(uiBatch, "Score: " + round.getPlayer().getScore(), 10, 678);
-        Assets.font.draw(uiBatch, Gdx.graphics.getFramesPerSecond() + " FPS", Gdx.graphics.getWidth()-10, Gdx.graphics.getHeight()-12, 0, Align.right, false);
+        Assets.font.draw(fbBatch, "Objective: " + round.getObjective().getObjectiveString(), 10, 708);
+        Assets.font.draw(fbBatch, "Score: " + round.getPlayer().getScore(), 10, 678);
+        Assets.font.draw(fbBatch, Gdx.graphics.getFramesPerSecond() + " FPS", Gdx.graphics.getWidth()-10, Gdx.graphics.getHeight()-12, 0, Align.right, false);
 
         Assets.font.setColor(1.0f, 1.0f, 1.0f, 1.0f);
-        Assets.font.draw(uiBatch, "Objective: " + round.getObjective().getObjectiveString(), 10, 710);
-        Assets.font.draw(uiBatch, "Score: " + round.getPlayer().getScore(), 10, 680);
-        Assets.font.draw(uiBatch, Gdx.graphics.getFramesPerSecond() + " FPS", Gdx.graphics.getWidth()-10, Gdx.graphics.getHeight()-10, 0, Align.right, false);
+        Assets.font.draw(fbBatch, "Objective: " + round.getObjective().getObjectiveString(), 10, 710);
+        Assets.font.draw(fbBatch, "Score: " + round.getPlayer().getScore(), 10, 680);
+        Assets.font.draw(fbBatch, Gdx.graphics.getFramesPerSecond() + " FPS", Gdx.graphics.getWidth()-10, Gdx.graphics.getHeight()-10, 0, Align.right, false);
 
         // Draw stamina bar (for flight);
-		uiBatch.draw(Assets.staminaEmpty, 1080, 10);
+		fbBatch.draw(Assets.staminaEmpty, 1080, 10);
         if (round.getPlayer().getFlyingTimer() > 0) {
             Assets.staminaFull.setRegionWidth((int) Math.max(0, Math.min(192, round.getPlayer().getFlyingTimer() / Player.PLAYER_MAX_FLIGHT_TIME * 192)));
         } else {
             Assets.staminaFull.setRegionWidth(0);
         }
-		uiBatch.draw(Assets.staminaFull, 1080, 10);
-
+		fbBatch.draw(Assets.staminaFull, 1080, 10);
 
         // Draw powerup bar.
-        round.powerUpManager.render(uiBatch);
-
+        round.powerUpManager.render(fbBatch);
 
         //Draw health.
         int x = 0;
         while(x < round.getPlayer().getMaximumHealth()) {
         	if(x+2 <= round.getPlayer().getCurrentHealth())
-        		uiBatch.draw(Assets.heartFull, x * 18 + (Gdx.graphics.getWidth()/2 - 50), 10);
+        		fbBatch.draw(Assets.heartFull, x * 18 + (Gdx.graphics.getWidth()/2 - 50), 10);
         	else if(x+1 <= round.getPlayer().getCurrentHealth())
-        		uiBatch.draw(Assets.heartHalf, x * 18 + (Gdx.graphics.getWidth()/2 - 50), 10);
+        		fbBatch.draw(Assets.heartHalf, x * 18 + (Gdx.graphics.getWidth()/2 - 50), 10);
         	else
-        		uiBatch.draw(Assets.heartEmpty, x * 18 + (Gdx.graphics.getWidth()/2 - 50), 10);
+        		fbBatch.draw(Assets.heartEmpty, x * 18 + (Gdx.graphics.getWidth()/2 - 50), 10);
         	x += 2;
         }
 
         // Draw round text at start of round.
         if (roundTimer < 3f) {
             roundTimer += delta;
-            uiBatch.draw(Assets.roundText, (Gdx.graphics.getWidth() - Assets.roundText.getWidth() - Assets.roundNums[level].getWidth())/2,
+            fbBatch.draw(Assets.roundText, (Gdx.graphics.getWidth() - Assets.roundText.getWidth() - Assets.roundNums[level].getWidth())/2,
                     (Gdx.graphics.getHeight() - Assets.roundText.getHeight())/2);
-            uiBatch.draw(Assets.roundNums[level], (Gdx.graphics.getWidth() + Assets.roundText.getWidth())/2,
+            fbBatch.draw(Assets.roundNums[level], (Gdx.graphics.getWidth() + Assets.roundText.getWidth())/2,
                     (Gdx.graphics.getHeight() - Assets.roundText.getHeight())/2);
         }
 
-        uiBatch.end();
+        fbBatch.end();
     }
 
     /**
      * Called every half a second to update animated water tiles.
      */
-    private void updateWaterAnimations(){
-        for(TiledMapTileLayer.Cell cell : waterCellsInScene){
-            String property = (String) cell.getTile().getProperties().get("water");
-            Integer currentAnimationFrame = Integer.parseInt(property);
+    private void updateWaterAnimations(float delta){
+        // Wait for half a second to elapse then call updateWaterAnimations
+        // This could certainly be handled using an Action if you are using Scene2D
+        elapsedSinceAnimation += delta;
+        if(elapsedSinceAnimation > 0.5f){
+            for(TiledMapTileLayer.Cell cell : waterCellsInScene){
+                String property = (String) cell.getTile().getProperties().get("water");
+                Integer currentAnimationFrame = Integer.parseInt(property);
 
-            currentAnimationFrame++;
-            if(currentAnimationFrame > waterTiles.size())
-                currentAnimationFrame = 1;
+                currentAnimationFrame++;
+                if(currentAnimationFrame > waterTiles.size())
+                    currentAnimationFrame = 1;
 
-            TiledMapTile newTile = waterTiles.get(currentAnimationFrame.toString());
-            cell.setTile(newTile);
+                TiledMapTile newTile = waterTiles.get(currentAnimationFrame.toString());
+                cell.setTile(newTile);
+            }
+            elapsedSinceAnimation = 0.0f;
         }
     }
 
@@ -494,7 +510,7 @@ public class GameScreen implements Screen {
     public void dispose() {
         mapRenderer.dispose();
         spriteBatch.dispose();
-        uiBatch.dispose();
+        fbBatch.dispose();
         shaderColor.dispose();
         shaderDistort.dispose();
     }

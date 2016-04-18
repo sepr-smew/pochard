@@ -26,7 +26,7 @@ void main() {
   vec4 color = v_color * texture2D(u_texture, v_texCoords);
   vec3 hsv = rgb2hsv(color.xyz);
 
-  hsv.x = mod(hsv.x+colorDelta, 180);
+  hsv.x = mod(hsv.x+colorDelta, 360);
   //hsv.y = mod(hsv.y+colorDelta, 1.0);
   gl_FragColor = vec4(hsv2rgb(hsv), color.w);
 }
