@@ -98,7 +98,7 @@ public abstract class Character extends PhysicsEntity {
     }
 
     public boolean isDemented() {
-        return dementedTimer>0f;
+        return true||dementedTimer>0f;
     }
 
     public void setDemented(boolean demented) {

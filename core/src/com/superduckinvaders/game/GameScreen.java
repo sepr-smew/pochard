@@ -2,10 +2,7 @@ package com.superduckinvaders.game;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
-import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.OrthographicCamera;
-import com.badlogic.gdx.graphics.Pixmap;
-import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.*;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
@@ -102,7 +99,7 @@ public class GameScreen implements Screen {
     ShaderProgram shaderColor;
 
     FrameBuffer frameBuffer;
-    SpriteBatch fbBatch;
+    FrameBuffer accFrameBuffer;
 
     float shaderTimer = 0f;
 
@@ -130,7 +127,6 @@ public class GameScreen implements Screen {
             System.out.print(shaderColor.getLog());
 
         spriteBatch = new SpriteBatch();
-        fbBatch = new SpriteBatch();
 
         initialiseFrameBuffer(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 
@@ -161,7 +157,7 @@ public class GameScreen implements Screen {
         // contains the WaterFrame property.  If it does, add to the waterCellsInScene array
         // Note, this only pays attention to the very first layer of tiles.
         // If you want to support animation across multiple layers you will have to loop through each
-        waterCellsInScene = new ArrayList<TiledMapTileLayer.Cell>();
+        waterCellsInScene = new ArrayList<>();
         TiledMapTileLayer layer = (TiledMapTileLayer) round.getMap().getLayers().get(0);
         for(int x = 0; x < layer.getWidth();x++){
             for(int y = 0; y < layer.getHeight();y++){
@@ -204,9 +200,13 @@ public class GameScreen implements Screen {
 
     public void initialiseFrameBuffer(int screenWidth, int screenHeight){
         if(frameBuffer != null) frameBuffer.dispose();
+        if(accFrameBuffer != null) accFrameBuffer.dispose();
 
         frameBuffer = new FrameBuffer(Pixmap.Format.RGB888, screenWidth, screenHeight, false);
         frameBuffer.getColorBufferTexture().setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+
+        accFrameBuffer = new FrameBuffer(Pixmap.Format.RGB888, screenWidth, screenHeight, false);
+        accFrameBuffer.getColorBufferTexture().setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
 
 //        if(fbBatch != null) fbBatch.dispose();
 //        fbBatch = new SpriteBatch();
@@ -245,8 +245,8 @@ public class GameScreen implements Screen {
         shaderTimer += delta;
 
         shaderDistort.begin();
-        shaderDistort.setUniformf("sinOmega", 6 + (float) (Math.sin(shaderTimer) * 2));
-        shaderDistort.setUniformf("sinAlpha", (float) (shaderTimer % (2 * Math.PI)));
+        shaderDistort.setUniformf("sinOmega", 5 + (float) (Math.sin(shaderTimer*2) * 2));
+        shaderDistort.setUniformf("sinAlpha", (float) (shaderTimer % (1.5f * Math.PI)));
         shaderDistort.setUniformf("magnitude", (float) (0.10f * Math.sin(shaderTimer * 3)));
         shaderDistort.end();
 
@@ -262,6 +262,9 @@ public class GameScreen implements Screen {
 
         frameBuffer.begin();
 
+        Gdx.gl.glClearColor(0, 0, 0, 1);
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+
         updateWaterAnimations(delta);
 
         debugMatrix = new Matrix4(camera.combined);
@@ -271,12 +274,15 @@ public class GameScreen implements Screen {
         List<Mob> mobs = new ArrayList<>();
         List<Mob> dementedMobs = new ArrayList<>();
 
+        boolean isDemented = round.getPlayer().isDemented();
+
         // Draw all entities.
         spriteBatch.begin();
 
+        spriteBatch.setShader(isDemented ? shaderColor : null);
+
         renderMapLower();
 
-        spriteBatch.setShader(null);
         spriteBatch.setProjectionMatrix(camera.combined.cpy());
 
         for (Entity entity : round.getEntities()) {
@@ -297,7 +303,7 @@ public class GameScreen implements Screen {
         for (Mob mob : dementedMobs)
             mob.render(spriteBatch);
 
-        spriteBatch.setShader(null);
+        spriteBatch.setShader(isDemented ? shaderColor : null);
 
         renderMapOverhang();
 
@@ -361,58 +367,84 @@ public class GameScreen implements Screen {
 
         frameBuffer.end();
 
-        fbBatch.begin();
+        spriteBatch.begin();
 
-        if (getRound().getPlayer().isDemented()) {
-            fbBatch.setShader(shaderDistort);
-        }
+        spriteBatch.setShader(isDemented ? shaderDistort : null);
+        //spriteBatch.setShader(null);
 
-        fbBatch.draw(frameBuffer.getColorBufferTexture(), 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), 0, 0, 1, 1);
+        spriteBatch.setProjectionMatrix(new Matrix4().setToOrtho2D(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight()));
+
+        spriteBatch.draw(frameBuffer.getColorBufferTexture(), 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), 0, 0, 1, 1);
+        spriteBatch.flush();
+        accFrameBuffer.begin();
+        //Gdx.gl.glClearColor(0, 0, 0, 0.5f);
+        //Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+
+        //spriteBatch.enableBlending();
+        //spriteBatch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+        Color c = spriteBatch.getColor();
+        spriteBatch.setColor(1f,1f,1f,0.15f);
+        spriteBatch.draw(frameBuffer.getColorBufferTexture(), 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), 0, 0, 1, 1);
+        spriteBatch.flush();
+        //spriteBatch.disableBlending();
+        accFrameBuffer.end();
+
+        spriteBatch.setColor(1f,1f,1f,0.8f);
+        spriteBatch.draw(frameBuffer.getColorBufferTexture(), 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), 0, 0, 1, 1);
+        spriteBatch.flush();
+        spriteBatch.setColor(c);
+
+        spriteBatch.setShader(null);
+
+        spriteBatch.draw(accFrameBuffer.getColorBufferTexture(), 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), 0, 0, 1, 1);
+        spriteBatch.flush();
+//
+
         // TODO: finish UI
         Assets.font.setColor(0f, 0f, 0f, 1.0f);
-        Assets.font.draw(fbBatch, "Objective: " + round.getObjective().getObjectiveString(), 10, 708);
-        Assets.font.draw(fbBatch, "Score: " + round.getPlayer().getScore(), 10, 678);
-        Assets.font.draw(fbBatch, Gdx.graphics.getFramesPerSecond() + " FPS", Gdx.graphics.getWidth()-10, Gdx.graphics.getHeight()-12, 0, Align.right, false);
+        Assets.font.draw(spriteBatch, "Objective: " + round.getObjective().getObjectiveString(), 10, 708);
+        Assets.font.draw(spriteBatch, "Score: " + round.getPlayer().getScore(), 10, 678);
+        Assets.font.draw(spriteBatch, Gdx.graphics.getFramesPerSecond() + " FPS", Gdx.graphics.getWidth()-10, Gdx.graphics.getHeight()-12, 0, Align.right, false);
 
         Assets.font.setColor(1.0f, 1.0f, 1.0f, 1.0f);
-        Assets.font.draw(fbBatch, "Objective: " + round.getObjective().getObjectiveString(), 10, 710);
-        Assets.font.draw(fbBatch, "Score: " + round.getPlayer().getScore(), 10, 680);
-        Assets.font.draw(fbBatch, Gdx.graphics.getFramesPerSecond() + " FPS", Gdx.graphics.getWidth()-10, Gdx.graphics.getHeight()-10, 0, Align.right, false);
+        Assets.font.draw(spriteBatch, "Objective: " + round.getObjective().getObjectiveString(), 10, 710);
+        Assets.font.draw(spriteBatch, "Score: " + round.getPlayer().getScore(), 10, 680);
+        Assets.font.draw(spriteBatch, Gdx.graphics.getFramesPerSecond() + " FPS", Gdx.graphics.getWidth()-10, Gdx.graphics.getHeight()-10, 0, Align.right, false);
 
         // Draw stamina bar (for flight);
-		fbBatch.draw(Assets.staminaEmpty, 1080, 10);
+		spriteBatch.draw(Assets.staminaEmpty, 1080, 10);
         if (round.getPlayer().getFlyingTimer() > 0) {
             Assets.staminaFull.setRegionWidth((int) Math.max(0, Math.min(192, round.getPlayer().getFlyingTimer() / Player.PLAYER_MAX_FLIGHT_TIME * 192)));
         } else {
             Assets.staminaFull.setRegionWidth(0);
         }
-		fbBatch.draw(Assets.staminaFull, 1080, 10);
+		spriteBatch.draw(Assets.staminaFull, 1080, 10);
 
         // Draw powerup bar.
-        round.powerUpManager.render(fbBatch);
+        round.powerUpManager.render(spriteBatch);
 
         //Draw health.
         int x = 0;
         while(x < round.getPlayer().getMaximumHealth()) {
         	if(x+2 <= round.getPlayer().getCurrentHealth())
-        		fbBatch.draw(Assets.heartFull, x * 18 + (Gdx.graphics.getWidth()/2 - 50), 10);
+        		spriteBatch.draw(Assets.heartFull, x * 18 + (Gdx.graphics.getWidth()/2 - 50), 10);
         	else if(x+1 <= round.getPlayer().getCurrentHealth())
-        		fbBatch.draw(Assets.heartHalf, x * 18 + (Gdx.graphics.getWidth()/2 - 50), 10);
+        		spriteBatch.draw(Assets.heartHalf, x * 18 + (Gdx.graphics.getWidth()/2 - 50), 10);
         	else
-        		fbBatch.draw(Assets.heartEmpty, x * 18 + (Gdx.graphics.getWidth()/2 - 50), 10);
+        		spriteBatch.draw(Assets.heartEmpty, x * 18 + (Gdx.graphics.getWidth()/2 - 50), 10);
         	x += 2;
         }
 
         // Draw round text at start of round.
         if (roundTimer < 3f) {
             roundTimer += delta;
-            fbBatch.draw(Assets.roundText, (Gdx.graphics.getWidth() - Assets.roundText.getWidth() - Assets.roundNums[level].getWidth())/2,
+            spriteBatch.draw(Assets.roundText, (Gdx.graphics.getWidth() - Assets.roundText.getWidth() - Assets.roundNums[level].getWidth())/2,
                     (Gdx.graphics.getHeight() - Assets.roundText.getHeight())/2);
-            fbBatch.draw(Assets.roundNums[level], (Gdx.graphics.getWidth() + Assets.roundText.getWidth())/2,
+            spriteBatch.draw(Assets.roundNums[level], (Gdx.graphics.getWidth() + Assets.roundText.getWidth())/2,
                     (Gdx.graphics.getHeight() - Assets.roundText.getHeight())/2);
         }
 
-        fbBatch.end();
+        spriteBatch.end();
     }
 
     /**
@@ -510,7 +542,6 @@ public class GameScreen implements Screen {
     public void dispose() {
         mapRenderer.dispose();
         spriteBatch.dispose();
-        fbBatch.dispose();
         shaderColor.dispose();
         shaderDistort.dispose();
     }

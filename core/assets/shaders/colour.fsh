@@ -27,6 +27,7 @@ void main() {
   vec3 hsv = rgb2hsv(color.xyz);
 
   hsv.x = mod(hsv.x+colorDelta, 360);
-  //hsv.y = mod(hsv.y+colorDelta, 1.0);
+  hsv.y = hsv.y*1.5;
+  hsv.z = hsv.z*1.5;
   gl_FragColor = vec4(hsv2rgb(hsv), color.w);
 }
