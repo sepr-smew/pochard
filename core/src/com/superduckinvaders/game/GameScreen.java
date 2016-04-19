@@ -275,6 +275,73 @@ public class GameScreen implements Screen {
         }
     }
 
+    public void renderUI(float delta){
+        Assets.font.setColor(0f, 0f, 0f, 1.0f);
+        Assets.font.draw(spriteBatch, "Objective: " + round.getObjective().getObjectiveString(), 10, 708);
+        Assets.font.draw(spriteBatch, "Score: " + round.getPlayer().getScore(), 10, 678);
+        Assets.font.draw(spriteBatch, Gdx.graphics.getFramesPerSecond() + " FPS", Gdx.graphics.getWidth()-10, Gdx.graphics.getHeight()-12, 0, Align.right, false);
+
+        Assets.font.setColor(1.0f, 1.0f, 1.0f, 1.0f);
+        Assets.font.draw(spriteBatch, "Objective: " + round.getObjective().getObjectiveString(), 10, 710);
+        Assets.font.draw(spriteBatch, "Score: " + round.getPlayer().getScore(), 10, 680);
+        Assets.font.draw(spriteBatch, Gdx.graphics.getFramesPerSecond() + " FPS", Gdx.graphics.getWidth()-10, Gdx.graphics.getHeight()-10, 0, Align.right, false);
+
+        // Draw stamina bar (for flight);
+        spriteBatch.draw(Assets.staminaEmpty, 1080, 10);
+        if (round.getPlayer().getFlyingTimer() > 0) {
+            Assets.staminaFull.setRegionWidth((int) Math.max(0, Math.min(192, round.getPlayer().getFlyingTimer() / Player.PLAYER_MAX_FLIGHT_TIME * 192)));
+        } else {
+            Assets.staminaFull.setRegionWidth(0);
+        }
+        spriteBatch.draw(Assets.staminaFull, 1080, 10);
+
+        // Draw powerup bar.
+        round.powerUpManager.render(spriteBatch);
+
+        //Draw health.
+        int x = 0;
+        while(x < round.getPlayer().getMaximumHealth()) {
+            if(x+2 <= round.getPlayer().getCurrentHealth())
+                spriteBatch.draw(Assets.heartFull, x * 18 + (Gdx.graphics.getWidth()/2 - 50), 10);
+            else if(x+1 <= round.getPlayer().getCurrentHealth())
+                spriteBatch.draw(Assets.heartHalf, x * 18 + (Gdx.graphics.getWidth()/2 - 50), 10);
+            else
+                spriteBatch.draw(Assets.heartEmpty, x * 18 + (Gdx.graphics.getWidth()/2 - 50), 10);
+            x += 2;
+        }
+
+        // Draw round text at start of round.
+        if (roundTimer < 3f) {
+            roundTimer += delta;
+            spriteBatch.draw(Assets.roundText, (Gdx.graphics.getWidth() - Assets.roundText.getWidth() - Assets.roundNums[level].getWidth())/2,
+                    (Gdx.graphics.getHeight() - Assets.roundText.getHeight())/2);
+            spriteBatch.draw(Assets.roundNums[level], (Gdx.graphics.getWidth() + Assets.roundText.getWidth())/2,
+                    (Gdx.graphics.getHeight() - Assets.roundText.getHeight())/2);
+        }
+    }
+
+    public void renderPathfinding(){
+        shapeRenderer.setProjectionMatrix(camera.combined.cpy());
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+
+        for (Mob mob : mobs) {
+            PathfindingAI.Coordinate c = ((PathfindingAI) mob.getAI()).target;
+            List<PathfindingAI.SearchNode> l = ((PathfindingAI) mob.getAI()).path_DEBUG;
+            shapeRenderer.setColor(1, 0, 1, 1);
+            if (l != null) {
+                for (PathfindingAI.SearchNode s : l) {
+                    shapeRenderer.x(s.coord.vector(), 7);
+                }
+            }
+            shapeRenderer.setColor(0, 1, 1, 1);
+            if (c != null) {
+                shapeRenderer.x(c.vector(), 10);
+            }
+        }
+
+        shapeRenderer.end();
+    }
+
 
     /**
      * Main game loop.
@@ -390,33 +457,14 @@ public class GameScreen implements Screen {
             }
         }
 
-
-        debugRenderer.render(round.world, debugMatrix);
+        if (DuckGame.DEBUGGING) {
+            debugRenderer.render(round.world, debugMatrix);
+        }
 
         spriteBatch.end();
 
-        //DEBUGGING
+        if (DuckGame.DEBUGGING) renderPathfinding();
 
-        shapeRenderer.setProjectionMatrix(camera.combined.cpy());
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
-
-        for (Mob mob : mobs) {
-            PathfindingAI.Coordinate c = ((PathfindingAI) mob.getAI()).target;
-            List<PathfindingAI.SearchNode> l = ((PathfindingAI) mob.getAI()).path_DEBUG;
-            shapeRenderer.setColor(1, 0, 1, 1);
-            if (l != null) {
-                for (PathfindingAI.SearchNode s : l) {
-                    shapeRenderer.x(s.coord.vector(), 7);
-                }
-            }
-            shapeRenderer.setColor(0, 1, 1, 1);
-            if (c != null) {
-                shapeRenderer.x(c.vector(), 10);
-            }
-        }
-
-        shapeRenderer.end();
-        // END
 
         frameBuffer.end();
 
@@ -447,49 +495,7 @@ public class GameScreen implements Screen {
         }
 //
 
-        // TODO: finish UI
-        Assets.font.setColor(0f, 0f, 0f, 1.0f);
-        Assets.font.draw(spriteBatch, "Objective: " + round.getObjective().getObjectiveString(), 10, 708);
-        Assets.font.draw(spriteBatch, "Score: " + round.getPlayer().getScore(), 10, 678);
-        Assets.font.draw(spriteBatch, Gdx.graphics.getFramesPerSecond() + " FPS", Gdx.graphics.getWidth()-10, Gdx.graphics.getHeight()-12, 0, Align.right, false);
-
-        Assets.font.setColor(1.0f, 1.0f, 1.0f, 1.0f);
-        Assets.font.draw(spriteBatch, "Objective: " + round.getObjective().getObjectiveString(), 10, 710);
-        Assets.font.draw(spriteBatch, "Score: " + round.getPlayer().getScore(), 10, 680);
-        Assets.font.draw(spriteBatch, Gdx.graphics.getFramesPerSecond() + " FPS", Gdx.graphics.getWidth()-10, Gdx.graphics.getHeight()-10, 0, Align.right, false);
-
-        // Draw stamina bar (for flight);
-		spriteBatch.draw(Assets.staminaEmpty, 1080, 10);
-        if (round.getPlayer().getFlyingTimer() > 0) {
-            Assets.staminaFull.setRegionWidth((int) Math.max(0, Math.min(192, round.getPlayer().getFlyingTimer() / Player.PLAYER_MAX_FLIGHT_TIME * 192)));
-        } else {
-            Assets.staminaFull.setRegionWidth(0);
-        }
-		spriteBatch.draw(Assets.staminaFull, 1080, 10);
-
-        // Draw powerup bar.
-        round.powerUpManager.render(spriteBatch);
-
-        //Draw health.
-        int x = 0;
-        while(x < round.getPlayer().getMaximumHealth()) {
-        	if(x+2 <= round.getPlayer().getCurrentHealth())
-        		spriteBatch.draw(Assets.heartFull, x * 18 + (Gdx.graphics.getWidth()/2 - 50), 10);
-        	else if(x+1 <= round.getPlayer().getCurrentHealth())
-        		spriteBatch.draw(Assets.heartHalf, x * 18 + (Gdx.graphics.getWidth()/2 - 50), 10);
-        	else
-        		spriteBatch.draw(Assets.heartEmpty, x * 18 + (Gdx.graphics.getWidth()/2 - 50), 10);
-        	x += 2;
-        }
-
-        // Draw round text at start of round.
-        if (roundTimer < 3f) {
-            roundTimer += delta;
-            spriteBatch.draw(Assets.roundText, (Gdx.graphics.getWidth() - Assets.roundText.getWidth() - Assets.roundNums[level].getWidth())/2,
-                    (Gdx.graphics.getHeight() - Assets.roundText.getHeight())/2);
-            spriteBatch.draw(Assets.roundNums[level], (Gdx.graphics.getWidth() + Assets.roundText.getWidth())/2,
-                    (Gdx.graphics.getHeight() - Assets.roundText.getHeight())/2);
-        }
+        renderUI(delta);
 
         spriteBatch.end();
 

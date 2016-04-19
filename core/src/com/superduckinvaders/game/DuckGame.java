@@ -9,6 +9,8 @@ import com.superduckinvaders.game.entity.Player;
  * The Website for the documentation: http://www.teampochard.co.uk/game-releases/
  */
 public class DuckGame extends Game {
+
+    public static final boolean DEBUGGING = false;
 	
     /**
      * The width of the game window.
