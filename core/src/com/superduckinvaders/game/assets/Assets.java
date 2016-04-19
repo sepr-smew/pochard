@@ -26,6 +26,7 @@ public class Assets {
      *  Player texture sets for normal and flying.
      */
     public static TextureSet playerNormal, playerFlying, playerSwimming, playerMelee;
+    public static TextureRegion minimapHead;
 
     /**
      *  Bad guy texture sets.
@@ -116,12 +117,12 @@ public class Assets {
     /**
      * Shadow for mobs.
      */
-    public static Texture shadow;
+    public static Texture mobShadow;
 
     /**
-     * Player shadow.
+     * Player mobShadow.
      */
-    public static Texture shadow2;
+    public static Texture playerShadow;
 
     /**
      * 'ROUND' text for beginning of round.
@@ -181,14 +182,7 @@ public class Assets {
 
         //Load the maps for the levels
         levels = new TiledMap[8];
-        loadLevel(0);
-        loadLevel(1);
-        loadLevel(2);
-        loadLevel(3);
-        loadLevel(4);
-        loadLevel(5);
-        loadLevel(6);
-        loadLevel(7);
+        for (int i = 0; i < 8; i++) loadLevel(i);
 
         font = loadFont("font/gamefont2.fnt");
 
@@ -222,8 +216,8 @@ public class Assets {
 
         cursor = new Pixmap(Gdx.files.internal("textures/cursor_crosshair.png"));
 
-        shadow = new Texture("textures/shadow.png");
-        shadow2 = new Texture("textures/shadow2.png");
+        mobShadow = new Texture("textures/mobShadow.png");
+        playerShadow = new Texture("textures/playerShadow.png");
 
         roundText = new Texture("RoundFonts/Round.png");
 
@@ -238,6 +232,8 @@ public class Assets {
      * If you change the player texture size, be sure to change the values here.
      */
     private static void loadPlayerTextureSets() {
+
+        minimapHead = new TextureRegion(loadTexture("textures/minimap_head.png"));
         // Load idle texture map.
         Texture playerIdle = loadTexture("textures/player_walking/player_idle.png");
 
@@ -341,10 +337,10 @@ public class Assets {
         Texture badGuyIdleSwim = loadTexture("textures/stormtrooper_enemy/badguy_idle_swimming.png");
 
         // Cut idle textures from texture map.
-        TextureRegion frontSwim = new TextureRegion(badGuyIdleSwim, 0, 0, 21, 24);
-        TextureRegion backSwim = new TextureRegion(badGuyIdleSwim, 21, 0, 21, 24);
-        TextureRegion leftSwim = new TextureRegion(badGuyIdleSwim, 42, 0, 21, 24);
-        TextureRegion rightSwim = new TextureRegion(badGuyIdleSwim, 63, 0, 21, 24);
+        TextureRegion frontSwim = new TextureRegion(badGuyIdleSwim, 0, 0, 32, 22);
+        TextureRegion backSwim = new TextureRegion(badGuyIdleSwim, 32, 0, 32, 22);
+        TextureRegion leftSwim = new TextureRegion(badGuyIdleSwim, 64, 0, 32, 22);
+        TextureRegion rightSwim = new TextureRegion(badGuyIdleSwim, 96, 0, 32, 22);
 
         // Load walking animations.
         Animation walkingFrontSwim = loadAnimation("textures/stormtrooper_enemy/badguy_walking_front_swimming.png", 4, 21, 0.2f);

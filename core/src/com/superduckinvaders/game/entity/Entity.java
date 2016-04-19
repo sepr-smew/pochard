@@ -1,6 +1,7 @@
 package com.superduckinvaders.game.entity;
 
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.math.Vector2;
 import com.superduckinvaders.game.Round;
 import com.superduckinvaders.game.assets.TextureSet;
 import com.superduckinvaders.game.entity.item.Item;
@@ -21,11 +22,7 @@ public abstract class Entity {
      * The x and y coordinates of this Entity.
      */
     protected float x, y;
-
-    /**
-     * The x and y velocity of this MobileEntity in pixels per second.
-     */
-    protected float velocityX = 0, velocityY = 0;
+    protected float width, height;
 
     /**
      * Whether or not to remove this Entity on the next frame.
@@ -54,6 +51,15 @@ public abstract class Entity {
         this.y = y;
     }
 
+    public Vector2 getPosition() {
+        return new Vector2(getX(), getY());
+    }
+
+    public Vector2 getCentre(){
+        return getPosition()
+                .add(getWidth()/2f, getHeight()/2f);
+    }
+
     /**
      * Returns the x coordinate of the entity
      * @return the x coordinate of this Entity
@@ -71,22 +77,6 @@ public abstract class Entity {
     }
 
     /**
-     * Returns the x velocity of the entity
-     * @return the x velocity of this MobileEntity in pixels per second
-     */
-    public float getVelocityX() {
-        return velocityX;
-    }
-
-    /**
-     * Returns the y velocity of the entity
-     * @return the y coordinate of this MobileEntity in pixels per second
-     */
-    public float getVelocityY() {
-        return velocityY;
-    }
-
-    /**
      * Returns true if the specified rectangle intersects this Entity.
      *
      * @param x      the x coordinate of the rectangle's bottom left corner
@@ -95,7 +85,7 @@ public abstract class Entity {
      * @param height the height of the rectangle
      * @return whether the specified rectangle intersects this Entity
      */
-    public boolean intersects(float x, float y, int width, int height) {
+    public boolean intersects(float x, float y, float width, float height) {
         return this.x < x + width && this.x + getWidth() > x && this.y < y + height && this.y + getHeight() > y;
     }
 
@@ -107,7 +97,10 @@ public abstract class Entity {
      * @return the distance between this Entity and the coordinates, in pixels
      */
     public float distanceTo(float x, float y) {
-        return (float) Math.sqrt(Math.pow(x - this.x, 2) + Math.pow(y - this.y, 2));
+        return distanceTo(new Vector2(x, y));
+    }
+    public float distanceTo(Vector2 pos) {
+        return getCentre().sub(pos).len();
     }
 
     /**
@@ -118,41 +111,59 @@ public abstract class Entity {
      * @return the angle between this Entity and the coordinates, in radians
      */
     public float angleTo(float x, float y) {
-        return (float) Math.atan2(y - (this.y + this.getHeight()/2), x - (this.x + this.getWidth()/2));
+        //return (float) Math.atan2(y - (this.y + this.getHeight()/2), x - (this.x + this.getWidth()/2));
+        return angleTo(new Vector2(x, y));
+    }
+    public float angleTo(Vector2 pos){
+        return vectorTo(pos).angle() % 360f;
+    }
+    public float angleRadTo(float x, float y) {
+        //return (float) Math.atan2(y - (this.y + this.getHeight()/2), x - (this.x + this.getWidth()/2));
+        return angleRadTo(new Vector2(x, y));
+    }
+    public float angleRadTo(Vector2 pos){
+        return vectorTo(pos).angleRad() % ((float)Math.PI * 2 );
+    }
+
+    public Vector2 vectorTo(Vector2 pos){
+        return pos.cpy().sub(getCentre());
     }
 
     /**
      * Returns the direction to the specified coordinates from this Entity (one of the FACING_ constants in TexutreSet).
      *
-     * @param x the x coordinate to compare with
-     * @param y the y coordinate to compare with
+     * @param pos the coordinates to compare with
      * @return the direction the coordinates are in relative to this Entity
      */
-    public int directionTo(float x, float y) {
-        float angle = angleTo(x, y);
+    public TextureSet.Facing directionTo(Vector2 pos) {
+        return directionTo(pos.x, pos.y);
+    }
+
+    public TextureSet.Facing directionTo(float x, float y) {
+        float angle = angleRadTo(x, y);
 
         if (angle < Math.PI * 3/8 && angle >= Math.PI / 8) {
-            return TextureSet.FACING_BACK_RIGHT;
+            return TextureSet.Facing.BACK_RIGHT;
 
         } else if (angle < Math.PI * 5 / 8 && angle >= Math.PI * 3/8) {
-                return TextureSet.FACING_BACK;
+                return TextureSet.Facing.BACK;
 
         } else if (angle < Math.PI * 7/8 && angle >= Math.PI * 5/8) {
-            return TextureSet.FACING_BACK_LEFT;
+            return TextureSet.Facing.BACK_LEFT;
 
         } else if (angle < -Math.PI * 5/8 && angle >= -Math.PI * 7/8) {
-            return TextureSet.FACING_FRONT_LEFT;
+            return TextureSet.Facing.FRONT_LEFT;
 
         } else if (angle < -Math.PI * 3/8 && angle >= -Math.PI * 5/8) {
-            return TextureSet.FACING_FRONT;
+            return TextureSet.Facing.FRONT;
 
         } else if (angle < -Math.PI * 1/8 && angle >= -Math.PI * 3/8) {
-            return TextureSet.FACING_FRONT_RIGHT;
+            return TextureSet.Facing.FRONT_RIGHT;
 
         } else if (angle < Math.PI * 1/8 && angle >= -Math.PI * 1/8) {
-            return TextureSet.FACING_RIGHT;
+            return TextureSet.Facing.RIGHT;
         } else {
-            return TextureSet.FACING_LEFT;
+            return TextureSet.Facing.LEFT;
         }
     }
 
@@ -160,13 +171,21 @@ public abstract class Entity {
      * Returns the width of the entity
      * @return the width of this Entity
      */
-    public abstract int getWidth();
+    public float getWidth() {
+        return this.width;
+    }
 
     /**
      * Returns the height of the entity
      * @return the height of this Entity
      */
-    public abstract int getHeight();
+    public float getHeight() {
+        return this.height;
+    }
+
+    public Vector2 getSize() {
+        return new Vector2(getWidth(), getHeight());
+    }
 
 
     /**
@@ -209,175 +228,7 @@ public abstract class Entity {
         }
     }
 
-    /**
-     * Gets whether the specified x delta will cause a collision on the left or right.
-     *
-     * @param deltaX the x delta
-     * @return whether a collision would occur on the left or right
-     */
-    public boolean collidesX(float deltaX) {
-        // Check for entity collisions.
-        for (Entity entity : parent.getEntities()) {
-            if (entity == this || this instanceof Projectile) {
-                continue;
-            }
-
-            if (entity instanceof Character && entity.intersects(x + deltaX, y, getWidth(), getHeight())) {
-                return true;
-            }
-        }
-
-        // Check for tile collisions.
-        return collidesLeft(deltaX) || collidesRight(deltaX);
-    }
-
-    /**
-     * Gets whether the specified y delta will cause a collision on the bottom or top.
-     *
-     * @param deltaY the y delta
-     * @return whether a collision would occur on the bottom or top
-     */
-    public boolean collidesY(float deltaY) {
-        // Check for entity collisions.
-        for (Entity entity : parent.getEntities()) {
-            // Don't damage my owner.
-            if (entity == this || this instanceof Projectile) {
-                continue;
-            }
-
-            if (entity instanceof Character && entity.intersects(x, y + deltaY, getWidth(), getHeight())) {
-                return true;
-            }
-        }
-
-        // Check for tile collisions.
-        return collidesBottom(deltaY) || collidesTop(deltaY);
-    }
-
-    /**
-     * Gets whether specified x delta will cause a collision from an arbitrary position
-     * Used in AI path detection.
-     *
-     * @param deltaX the x delta
-     * @param fromX  arbitrary x position
-     * @param fromY  arbitrary y position
-     * @return whether collides
-     */
-    public boolean collidesXfrom(float deltaX, float fromX, float fromY) {
-        float tempX = this.x;
-        float tempY = this.y;
-        this.x = fromX;
-        this.y = fromY;
-        boolean result = collidesLeft(deltaX) || collidesRight(deltaX);
-        this.x = tempX;
-        this.y = tempY;
-        return result;
-    }
-
-    /**
-     * Gets whether specified y delta will cause a collision from an arbitrary position
-     * Used in AI path detection.
-     *
-     * @param deltaY the y delta
-     * @param fromX  arbitrary x position
-     * @param fromY  arbitrary y position
-     * @return whether collides
-     */
-    public boolean collidesYfrom(float deltaY, float fromX, float fromY) {
-        float tempX = this.x;
-        float tempY = this.y;
-        this.x = fromX;
-        this.y = fromY;
-        boolean result = collidesTop(deltaY) || collidesBottom(deltaY);
-        this.x = tempX;
-        this.y = tempY;
-        return result;
-    }
-
-    /**
-     * Gets whether the specified x delta will cause a collision on the left.
-     *
-     * @param deltaX the x delta
-     * @return whether a collision would occur on the left
-     */
-    private boolean collidesLeft(float deltaX) {
-        // If entity is smaller than tile we can just check to see if each corner collides instead of all points along the edge.
-        if (getHeight() <= parent.getTileHeight()) {
-            return parent.isTileBlocked((int) Math.floor(x + deltaX), (int) y) || parent.isTileBlocked((int) Math.floor(x + deltaX), (int) y + getHeight());
-        } else {
-            for (int i = (int) y; i < y + getHeight(); i++) {
-                if (parent.isTileBlocked((int) Math.floor(x + deltaX), i)) {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-    }
-
-    /**
-     * Gets whether the specified x delta will cause a collision on the right.
-     *
-     * @param deltaX the x delta
-     * @return whether a collision would occur on the right
-     */
-    private boolean collidesRight(float deltaX) {
-        // If entity is smaller than tile we can just check to see if each corner collides instead of all points along the edge.
-        if (getHeight() <= parent.getTileHeight()) {
-            return parent.isTileBlocked((int) Math.floor(x + getWidth() + deltaX), (int) y) || parent.isTileBlocked((int) Math.floor(x + getWidth() + deltaX), (int) y + getHeight());
-        } else {
-            for (int i = (int) y; i < y + getHeight(); i++) {
-                if (parent.isTileBlocked((int) Math.ceil(x + getWidth() - 1 + deltaX), i)) {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-    }
-
-    /**
-     * Gets whether the specified y delta will cause a collision on the bottom.
-     *
-     * @param deltaY the y delta
-     * @return whether a collision would occur on the bottom
-     */
-    private boolean collidesBottom(float deltaY) {
-        // If entity is smaller than tile we can just check to see if each corner collides instead of all points along the edge.
-        if (getWidth() <= parent.getTileWidth()) {
-            return parent.isTileBlocked((int) x, (int) Math.floor(y + deltaY)) || parent.isTileBlocked((int) x + getWidth(), (int) Math.floor(y + deltaY));
-        } else {
-            for (int i = (int) x; i < x + getWidth(); i++) {
-                if (parent.isTileBlocked(i, (int) Math.floor(y + deltaY))) {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-    }
-
-
-    /**
-     * Gets whether the specified y delta will cause a collision on the top.
-     *
-     * @param deltaY the y delta
-     * @return whether a collision would occur on the top
-     */
-    private boolean collidesTop(float deltaY) {
-        // If entity is smaller than tile we can just check to see if each corner collides instead of all points along the edge.
-        if (getWidth() <= parent.getTileWidth()) {
-            return parent.isTileBlocked((int) x, (int) Math.floor(y + getHeight() + deltaY)) || parent.isTileBlocked((int) x + getWidth(), (int) Math.floor(y + getHeight() + deltaY));
-        } else {
-            for (int i = (int) x; i < x + getWidth(); i++) {
-                if (parent.isTileBlocked(i, (int) Math.ceil(y + getHeight() - 1 + deltaY))) {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-    }
+    public void dispose(){}
 
     /**
      * Updates the state of this Entity.
@@ -403,6 +254,8 @@ public abstract class Entity {
 
         @Override
         public int compare(Entity o1, Entity o2) {
+            return new Float(o1.getY()).compareTo(o2.getY());
+            /*
             //front of list rendered first
             if (o1 instanceof Character) {
                 if (o2 instanceof Character || o2 instanceof Item) {
@@ -442,7 +295,7 @@ public abstract class Entity {
                         return -1;
                     }
                 }
-            }
+            }*/
         }
 
     }

@@ -54,7 +54,7 @@ public class Particle extends Entity {
      * @return the width of this Particle
      */
     @Override
-    public int getWidth() {
+    public float getWidth() {
         return animation.getKeyFrame(0).getRegionWidth();
     }
 
@@ -62,7 +62,7 @@ public class Particle extends Entity {
      * @return the height of this Particle
      */
     @Override
-    public int getHeight() {
+    public float getHeight() {
         return animation.getKeyFrame(0).getRegionHeight();
     }
 

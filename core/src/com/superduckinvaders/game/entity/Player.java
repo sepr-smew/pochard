@@ -4,7 +4,9 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.physics.box2d.Contact;
 import com.superduckinvaders.game.Round;
 import com.superduckinvaders.game.assets.Assets;
 import com.superduckinvaders.game.assets.TextureSet;
@@ -13,7 +15,6 @@ import com.superduckinvaders.game.util.KeySequenceListener;
 import com.badlogic.gdx.Input.Keys;
 
 import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Represents the player of the game.
@@ -35,10 +36,6 @@ public class Player extends Character {
      */
     public static final float WATER_SPEED_MODIFIER=1.6f;
 
-    /**
-     * Player's standard attack delay (how many seconds between attacks).
-     */
-    public static final int PLAYER_ATTACK_DELAY = 1;
 
     /**
      * How much the Player's score increases should be multiplied by if they have the score multiplier powerup.
@@ -53,7 +50,7 @@ public class Player extends Character {
     /**
      * How much the Player's speed should me multiplied by if they are flying.
      */
-    public static final float PLAYER_FLIGHT_SPEED_MULTIPLIER = 2.5f;
+    public static final float PLAYER_FLIGHT_SPEED_MULTIPLIER = 5f;
 
     /**
      * How much the Player's attack rate should be multiplied by if they have the rate of fire powerup.
@@ -92,24 +89,19 @@ public class Player extends Character {
     private boolean isMeleeing = false;
 
     /**
-     * How long it has been since the Player last attacked.
+     * 2D array storing the offset from the bottom left of the sprite at which projectiles will be spawned.
+     * Basically make the projectiles come out the gun barrel for each direction sprite
+     * Rows are for each direction
+     * 0th column for x, 1st column for right
      */
-    private float attackTimer = 0;
-
+    private Vector2[] projectileDrawPoint;
     /**
      * 2D array storing the offset from the bottom left of the sprite at which projectiles will be spawned.
      * Basically make the projectiles come out the gun barrel for each direction sprite
      * Rows are for each direction
      * 0th column for x, 1st column for right
      */
-    private int[][] projectileDrawPoint = new int[8][2];
-    /**
-     * 2D array storing the offset from the bottom left of the sprite at which projectiles will be spawned.
-     * Basically make the projectiles come out the gun barrel for each direction sprite
-     * Rows are for each direction
-     * 0th column for x, 1st column for right
-     */
-    private int[][] projectileDrawPointSwimming = new int[8][2];
+    private Vector2[] projectileDrawPointSwimming;
 
     /**
      * Whether the player is currently invulnerable due to just being hit
@@ -154,41 +146,7 @@ public class Player extends Character {
      */
     private int boundsY = 7;
 
-    /**
-     * Used in flying movement
-     * The maximum acceleration amount
-     */
-    private final float MAX_ACC=2;
-
-    /**
-     * Used in flying movement
-     * The minimum acceleration amount
-     */
-    private final float MIN_ACC=0.5f;
-
-    /**
-     * Used in flying movement
-     * The amount to change acceleration by each frame
-     */
-    private final float ACC_SPEED=0.2f;
-
-    /**
-     * Used in flying movement
-     * The current x acceleration of the player
-     */
-    private float accX=0;
-
-    /**
-     * Used in flying movement
-     * The current y acceleration of the player
-     */
-    private float accY=0;
-
-    /**
-     * Used in flying to normalise direction vectors
-     * Precalculated for speed
-     */
-    private final float SQUAREROOT2 = (float)Math.sqrt(2);
+    private ArrayList<Contact> flyingContacts = new ArrayList<>();
 
     /**
      * If was the mouse was clicked last tick, for the infinite fire cheat.
@@ -204,57 +162,36 @@ public class Player extends Character {
      */
     public Player(Round parent, int x, int y) {
         super(parent, x, y, PLAYER_HEALTH);
+        enemyBits = MOB_BITS | PROJECTILE_BITS;
+        RANGED_DAMAGE = 50;
+        MELEE_ATTACK_COOLDOWN = 0.05f;
+        RANGED_ATTACK_COOLDOWN = 0.5f;
+        createDynamicBody(PLAYER_BITS, ALL_BITS, NO_GROUP, false);
+        createMeleeSensor(40f);
 
-        //Fill the correct values for the projectile draw points
-        projectileDrawPoint[TextureSet.FACING_FRONT][0]=7-boundsX;
-        projectileDrawPoint[TextureSet.FACING_FRONT][1]=26-boundsY;
-
-        projectileDrawPoint[TextureSet.FACING_FRONT_LEFT][0]=-4-boundsX;
-        projectileDrawPoint[TextureSet.FACING_FRONT_LEFT][1]=30-boundsY;
-
-        projectileDrawPoint[TextureSet.FACING_LEFT][0]=0-boundsX;
-        projectileDrawPoint[TextureSet.FACING_LEFT][1]=33-boundsY;
-
-        projectileDrawPoint[TextureSet.FACING_BACK_LEFT][0]=17-boundsX;
-        projectileDrawPoint[TextureSet.FACING_BACK_LEFT][1]=29-boundsY;
-
-        projectileDrawPoint[TextureSet.FACING_BACK][0]=27-boundsX;
-        projectileDrawPoint[TextureSet.FACING_BACK][1]=27-boundsY;
-
-        projectileDrawPoint[TextureSet.FACING_BACK_RIGHT][0]=31-boundsX;
-        projectileDrawPoint[TextureSet.FACING_BACK_RIGHT][1]=29-boundsY;
-
-        projectileDrawPoint[TextureSet.FACING_RIGHT][0]=32-boundsX;
-        projectileDrawPoint[TextureSet.FACING_RIGHT][1]=27-boundsY;
-
-        projectileDrawPoint[TextureSet.FACING_FRONT_RIGHT][0]=21-boundsX;
-        projectileDrawPoint[TextureSet.FACING_FRONT_RIGHT][1]=27-boundsY;
+        projectileDrawPoint = new Vector2[]{
+                new Vector2(7 - boundsX, 26 - boundsY),  // Front
+                new Vector2(-4 - boundsX, 30 - boundsY), // Front Left
+                new Vector2(0 - boundsX, 33 - boundsY),  // Left
+                new Vector2(17 - boundsX, 29 - boundsY), // Back Left
+                new Vector2(27 - boundsX, 27 - boundsY), // Back
+                new Vector2(31 - boundsX, 29 - boundsY), // Back Right
+                new Vector2(32 - boundsX, 27 - boundsY), // Right
+                new Vector2(21 - boundsX, 27 - boundsY)  // Front Right
+        };
 
         //Swimming projectile draw points
-        projectileDrawPointSwimming[TextureSet.FACING_FRONT][0]=5-boundsX;
-        projectileDrawPointSwimming[TextureSet.FACING_FRONT][1]=5-boundsY;
-
-        projectileDrawPointSwimming[TextureSet.FACING_FRONT_LEFT][0]=-1-boundsX;
-        projectileDrawPointSwimming[TextureSet.FACING_FRONT_LEFT][1]=11-boundsY;
-
-        projectileDrawPointSwimming[TextureSet.FACING_LEFT][0]=2-boundsX;
-        projectileDrawPointSwimming[TextureSet.FACING_LEFT][1]=13-boundsY;
-
-        projectileDrawPointSwimming[TextureSet.FACING_BACK_LEFT][0]=17-boundsX;
-        projectileDrawPointSwimming[TextureSet.FACING_BACK_LEFT][1]=9-boundsY;
-
-        projectileDrawPointSwimming[TextureSet.FACING_BACK][0]=24-boundsX;
-        projectileDrawPointSwimming[TextureSet.FACING_BACK][1]=10-boundsY;
-
-        projectileDrawPointSwimming[TextureSet.FACING_BACK_RIGHT][0]=30-boundsX;
-        projectileDrawPointSwimming[TextureSet.FACING_BACK_RIGHT][1]=7-boundsY;
-
-        projectileDrawPointSwimming[TextureSet.FACING_RIGHT][0]=29-boundsX;
-        projectileDrawPointSwimming[TextureSet.FACING_RIGHT][1]=8-boundsY;
-
-        projectileDrawPointSwimming[TextureSet.FACING_FRONT_RIGHT][0]=18-boundsX;
-        projectileDrawPointSwimming[TextureSet.FACING_FRONT_RIGHT][1]=7-boundsY;
-
+        projectileDrawPointSwimming = new Vector2[]{
+                new Vector2(5 - boundsX, 5 - boundsY),   // Front
+                new Vector2(-1 - boundsX, 11 - boundsY), // Front Left
+                new Vector2(2 - boundsX, 13 - boundsY),  // Left
+                new Vector2(17 - boundsX, 9 - boundsY),  // Back Left
+                new Vector2(24 - boundsX, 10 - boundsY), // Back
+                new Vector2(30 - boundsX, 7 - boundsY),  // Back Right
+                new Vector2(29 - boundsX, 8 - boundsY),  // Right
+                new Vector2(18 - boundsX, 7 - boundsY)   // Front Right
+        };
+        
     }
 
     /**
@@ -306,30 +243,11 @@ public class Player extends Character {
      * There are 2 flying textures, one for left and one for right
      */
     public void enableFlying(){
-        //Get left/right movement
-        if (Gdx.input.isKeyPressed(Input.Keys.A)) {
-            velocityX = -(PLAYER_SPEED*PLAYER_FLIGHT_SPEED_MULTIPLIER);
-            facing=TextureSet.FACING_LEFT;
-        } else if (Gdx.input.isKeyPressed(Input.Keys.D)) {
-            velocityX = (PLAYER_SPEED*PLAYER_FLIGHT_SPEED_MULTIPLIER);
-            facing=TextureSet.FACING_RIGHT;
-        }
-        //Get up/down movement
-        if (Gdx.input.isKeyPressed(Input.Keys.W)) {
-            velocityY = (PLAYER_SPEED*PLAYER_FLIGHT_SPEED_MULTIPLIER);
-        } else if (Gdx.input.isKeyPressed(Input.Keys.S)) {
-            velocityY = -(PLAYER_SPEED*PLAYER_FLIGHT_SPEED_MULTIPLIER);
-        }
-        accX=0;
-        accY=0;
+
+        setVelocity(getVelocity().setLength(PLAYER_SPEED*PLAYER_FLIGHT_SPEED_MULTIPLIER*1.3f));
+
         disableCollision();
         isFlying = true;
-
-        //Normalizes vectors to prevent diagonal movement being faster
-        if (velocityX != 0 && velocityY != 0) {
-            velocityX /= SQUAREROOT2;
-            velocityY /= SQUAREROOT2;
-        }
 
         Assets.flying.loop();
     }
@@ -338,16 +256,22 @@ public class Player extends Character {
      * Attempts to disable flying. Will not disable if the player is currently over a collision tile
      */
     public void disableFlying(){
-        if(collidesX(0))
-            return;
-        if(collidesY(0))
-            return;
+        if (!flyingContacts.isEmpty()) return;
 
         enableCollision();
         isFlying=false;
         if(flyingTimer<0)
             flyingTimer=0;
         Assets.flying.stop();
+    }
+
+    @Override
+    protected boolean meleeAttack(int damage) {
+        if (super.meleeAttack(damage)){
+            Assets.saberHit.play(0.05f);
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -365,68 +289,21 @@ public class Player extends Character {
      * Additional update function for the melee attack state
      * Logic for ending melee state and melee hit detection logic
      * Utilises the MeleeHitbox class to create a rectangular hitbox dependant on the direction the player is facing
+     *  -- not any more it doesn't!
      */
     private void updateMeleeAttack(){
         //End condition for melee state
         if(stateTime>=Assets.playerMelee.getAnimationDuration(facing)-Assets.playerMelee.getFrameDuration(facing)/2){
             isMeleeing=false;
         }
-
-        //Melee hit detection, define a hitbox for each facing direction
-        MeleeHitbox mHitbox;
-        switch (facing){
-            case TextureSet.FACING_BACK:{
-                mHitbox= new MeleeHitbox(parent, x, y+getHeight(), 32,32);
-                break;
-            }
-            case TextureSet.FACING_BACK_RIGHT:{
-                mHitbox= new MeleeHitbox(parent, x+getWidth(), y, 32,64);
-                break;
-            }
-            case TextureSet.FACING_RIGHT:{
-                mHitbox= new MeleeHitbox(parent, x+getWidth(), y, 32,64);
-                break;
-            }
-            case TextureSet.FACING_FRONT_RIGHT:{
-                mHitbox= new MeleeHitbox(parent, x+getWidth(), y, 32,64);
-                break;
-            }
-            case TextureSet.FACING_FRONT:{
-                mHitbox= new MeleeHitbox(parent, x, y-32, 32,32);
-                break;
-            }
-            case TextureSet.FACING_FRONT_LEFT:{
-                mHitbox= new MeleeHitbox(parent, x-32, y, 32,64);
-                break;
-            }
-            case TextureSet.FACING_LEFT:{
-                mHitbox= new MeleeHitbox(parent, x-32, y, 32,64);
-                break;
-            }
-            case TextureSet.FACING_BACK_LEFT:{
-                mHitbox= new MeleeHitbox(parent, x-32, y, 32,64);
-                break;
-            }
-            default:{
-                mHitbox = new MeleeHitbox(parent, 0, 0, 0, 0);
-                break;
-            }
-
-        }
-        List<Mob> collideMobs = mHitbox.getCollides();
-        for(Mob thisMob : collideMobs){
-            thisMob.damage(100);
-        }
-        if(collideMobs.size()!=0)
-            Assets.saberHit.play(0.05f);
-
+        meleeAttack(50);
     }
 
     /**
      * @return the width of this Player
      */
     @Override
-    public int getWidth() {
+    public float getWidth() {
         return boundsW;
     }
 
@@ -434,7 +311,7 @@ public class Player extends Character {
      * @return the height of this Player
      */
     @Override
-    public int getHeight() {
+    public float getHeight() {
         return boundsH;
     }
 
@@ -454,6 +331,13 @@ public class Player extends Character {
         return boundsY;
     }
 
+    @Override
+    public boolean canBeDamaged(){
+        return !(isFlying ||
+               parent.powerUpManager.getIsActive(PowerupManager.powerupTypes.INVULNERABLE) ||
+               isDamageFrames);
+    }
+
     /**
      * Damages the Player, taking into account the possibility of invulnerability.
      * @param health the number of points to damage by
@@ -461,13 +345,10 @@ public class Player extends Character {
     @Override
     public void damage(int health) {
         // Only apply damage if we don't have the invulnerability powerup/ invincibility frames
-        if(!isFlying) {
-            if (!(parent.powerUpManager.getIsActive(PowerupManager.powerupTypes.INVULNERABLE) && !isDamageFrames)) {
-                isDamageFrames = true;
-                damageFramesTimer = DAMAGE_FRAMES_LENGTH;
-                this.currentHealth -= health;
-                parent.floatyNumbersManager.createDamageNumber(health, x, y);
-            }
+        if(canBeDamaged()) {
+            isDamageFrames = true;
+            damageFramesTimer = DAMAGE_FRAMES_LENGTH;
+            super.damage(health);
         }
     }
 
@@ -490,20 +371,14 @@ public class Player extends Character {
         if(isMeleeing)
             updateMeleeAttack();
 
-        //update attack timer.
-        attackTimer += delta;
-
         //Update miscellaneous player inputs
         updatePlayerInputs();
 
         //Update movement
-        if(isFlying)
-            updateFlyingMovement();
-        else
-            updateWalkingMovement();
+        updateWalkingMovement();
 
         // Update animation state time.
-        if (velocityX != 0 || velocityY != 0 || isMeleeing) {
+        if (!getVelocity().isZero(0.1f) || isMeleeing) {
             stateTime += delta;
         } else {
             stateTime = 0;
@@ -519,11 +394,11 @@ public class Player extends Character {
                 disableFlying();
 
             //Update the flying direction texture using the x velocity
-            if(velocityX>=0){
-                facing=TextureSet.FACING_RIGHT;
+            if(getVelocity().x>=0){
+                facing=TextureSet.Facing.RIGHT;
             }
             else{
-                facing=TextureSet.FACING_LEFT;
+                facing=TextureSet.Facing.LEFT;
             }
         }
         else{
@@ -547,20 +422,19 @@ public class Player extends Character {
         if (Gdx.input.isButtonPressed(Input.Buttons.LEFT) && !isFlying && !isMeleeing) {
             //Limits attack rate based on a bunch of conditions.
             float attackMultiplier = parent.powerUpManager.getIsActive(PowerupManager.powerupTypes.RATE_OF_FIRE) ? PLAYER_ATTACK_DELAY_MULTIPLIER : 1;
-            if ((parent.cheatInfiniteFire && !clickedLastTick) ||
-                    attackTimer >= PLAYER_ATTACK_DELAY * attackMultiplier) {
-                attackTimer = 0;
+                if ((parent.cheatInfiniteFire && !clickedLastTick) ||
+                        rangedAttackTimer >= RANGED_ATTACK_COOLDOWN * attackMultiplier) {
+                rangedAttackTimer = 0;
 
                 //Update aim direction
-                Vector3 target = parent.unproject(Gdx.input.getX(), Gdx.input.getY());
+                Vector3 target3 = parent.unproject(Gdx.input.getX(), Gdx.input.getY());
+                Vector2 target = new Vector2(target3.x, target3.y);
 
                 //Alter starting point based on if on water or not
-                int attackDamage = parent.cheatSuperDamage ? 9999 : 50;
-                if(isOnWater()) {
-                    fireAt(projectileDrawPointSwimming[facing][0],projectileDrawPointSwimming[facing][1],target.x, target.y, 500, attackDamage);
-                } else {
-                    fireAt(projectileDrawPoint[facing][0],projectileDrawPoint[facing][1],target.x, target.y + 4, 500, attackDamage);
-                }
+                Vector2 origin = getPosition()
+                                .add((isOnWater() ? projectileDrawPointSwimming : projectileDrawPoint)[facing.index()]);
+                Vector2 velocity = target.sub(origin).setLength(500);
+                fireAt(origin, velocity);
             }
         }
         clickedLastTick = Gdx.input.isButtonPressed(Input.Buttons.LEFT);
@@ -575,7 +449,7 @@ public class Player extends Character {
             if(isFlying){
                 disableFlying();
             }
-            if(flyingTimer >= PLAYER_MAX_FLIGHT_TIME && (velocityX != 0 || velocityY != 0))
+            if(flyingTimer >= PLAYER_MAX_FLIGHT_TIME && (!getVelocity().isZero(0.1f)))
                 enableFlying();
 
         }
@@ -587,88 +461,36 @@ public class Player extends Character {
      */
     private void updateWalkingMovement(){
         // Only allow movement via keys if not flying.
-            // Calculate speed at which to move the player.
-            float speed = PLAYER_SPEED * (parent.powerUpManager.getIsActive(PowerupManager.powerupTypes.SUPER_SPEED) ? PLAYER_SUPER_SPEED_MULTIPLIER : 1);
-            speed *= isOnWater() ? WATER_SPEED_MODIFIER : 1;
+        // Calculate speed at which to move the player.
 
-            // Left/right movement.
-            if (Gdx.input.isKeyPressed(Input.Keys.A)) {
-                velocityX = -speed;
-            } else if (Gdx.input.isKeyPressed(Input.Keys.D)) {
-                velocityX = speed;
-            } else {
-                velocityX = 0;
-            }
+        float speed = PLAYER_SPEED;
 
-            // Left/right movement.
-            if (Gdx.input.isKeyPressed(Input.Keys.W)) {
-                velocityY = speed;
-            } else if (Gdx.input.isKeyPressed(Input.Keys.S)) {
-                velocityY = -speed;
-            } else {
-                velocityY = 0;
-            }
+        if (parent.powerUpManager.getIsActive(PowerupManager.powerupTypes.SUPER_SPEED))
+            speed *= PLAYER_SUPER_SPEED_MULTIPLIER;
+        if (isFlying)         speed *= PLAYER_FLIGHT_SPEED_MULTIPLIER;
+        else if (isOnWater()) speed *= WATER_SPEED_MODIFIER;
 
-    }
-
-    /**
-     * Flying movement logic
-     * Flying sets the player with a reasonably fast starting velocity using the direction they were walking in
-     * When flying, the movement keys affect acceleration instead of velocity giving a "floatier" feel and giving less control
-     */
-    private void updateFlyingMovement(){
-
-        //Check key inputs  to influence acceleration.
+        Vector2 velocity = new Vector2();
+        // Left/right movement.
         if (Gdx.input.isKeyPressed(Input.Keys.A)) {
-            if(accX==0) //Set a starting speed
-                accX=-MIN_ACC;
-            else
-                accX -= ACC_SPEED;
+            velocity.x += -1f;
         } else if (Gdx.input.isKeyPressed(Input.Keys.D)) {
-            if(accX==0)
-                accX=MIN_ACC;
-            else
-                accX += ACC_SPEED;
+            velocity.x += 1f;
         }
 
         // Left/right movement.
         if (Gdx.input.isKeyPressed(Input.Keys.W)) {
-            if(accY==0)
-                accY=MIN_ACC;
-            else
-                accY += ACC_SPEED;
+            velocity.y += 1f;
         } else if (Gdx.input.isKeyPressed(Input.Keys.S)) {
-            if(accY==0)
-                accY=-MIN_ACC;
-            else
-                accY -= ACC_SPEED;
+            velocity.y += -1f;
         }
 
-        //Limit acceleration to Max
-        if(accX<-MAX_ACC)
-            accX=-MAX_ACC;
-        else if(accX>MAX_ACC)
-            accX=MAX_ACC;
+        if (isFlying && velocity.isZero())
+            velocity = getVelocity();
 
-        if(accY<-MAX_ACC)
-            accY=-MAX_ACC;
-        else if(accY>MAX_ACC)
-            accY=MAX_ACC;
+        velocity.setLength(speed);
 
-        //Update velocities with acceleration
-        velocityX+=accX;
-        velocityY+=accY;
-
-        //Limit The Maximum velocity
-        if(velocityX<-(PLAYER_SPEED*PLAYER_FLIGHT_SPEED_MULTIPLIER))
-            velocityX=-(PLAYER_SPEED*PLAYER_FLIGHT_SPEED_MULTIPLIER);
-        else if(velocityX>(PLAYER_SPEED*PLAYER_FLIGHT_SPEED_MULTIPLIER))
-            velocityX=(PLAYER_SPEED*PLAYER_FLIGHT_SPEED_MULTIPLIER);
-
-        if(velocityY<-(PLAYER_SPEED*PLAYER_FLIGHT_SPEED_MULTIPLIER))
-            velocityY=-(PLAYER_SPEED*PLAYER_FLIGHT_SPEED_MULTIPLIER);
-        else if(velocityY>(PLAYER_SPEED*PLAYER_FLIGHT_SPEED_MULTIPLIER))
-            velocityY=(PLAYER_SPEED*PLAYER_FLIGHT_SPEED_MULTIPLIER);
+        setVelocity(velocity, isFlying ? 0.7f : 4f);
     }
 
     /**
@@ -681,106 +503,55 @@ public class Player extends Character {
         // Use the right texture set.
         TextureSet textureSet = isOnWater() ? Assets.playerSwimming : Assets.playerNormal;
 
-        spriteBatch.draw(Assets.shadow2, x-2, y-6);//Draw the shadow under the player
+        spriteBatch.draw(Assets.playerShadow, getX()-2, getY()-6);//Draw the mobShadow under the player
         if(isFlying)
-            spriteBatch.draw(Assets.playerFlying.getTexture(facing, 0), x - getBoundsX()-18, y - getBoundsY()+10);
+            spriteBatch.draw(Assets.playerFlying.getTexture(facing, 0), getX() - getBoundsX()-18, getY() - getBoundsY()+10);
         else {
             if(!isDamageFrames || isDamageFrames && damageFramesFrame)
                 if(isMeleeing)
-                    spriteBatch.draw(Assets.playerMelee.getTexture(facing, stateTime), x - getBoundsX()-16, y - getBoundsY());
+                    spriteBatch.draw(Assets.playerMelee.getTexture(facing, stateTime), getX() - getBoundsX()-16, getY() - getBoundsY());
                 else
-                    spriteBatch.draw(textureSet.getTexture(facing, stateTime), x - getBoundsX(), y - getBoundsY());
+                    spriteBatch.draw(textureSet.getTexture(facing, stateTime), getX() - getBoundsX(), getY() - getBoundsY());
         }
         damageFramesFrame=!damageFramesFrame;
     }
 
 
+    @Override
+    public void beginCollision(PhysicsEntity other, Contact contact) {
+        super.beginCollision(other, contact);
+        if (isFlying && 0 == (other.getCategoryBits() & (BOUNDS_BITS | WATER_BITS))){
+            flyingContacts.add(contact);
+        }
+    }
+
+    @Override
+    public void endCollision(PhysicsEntity other, Contact contact) {
+        super.endCollision(other, contact);
+        if (isFlying && flyingContacts.contains(contact)){
+            flyingContacts.remove(contact);
+        }
+    }
+
     /**
      * Available upgrades (upgrades are persistent).
      */
     public enum Upgrade {
-        NONE,
-        GUN;
+        NONE(null),
+        GUN(Assets.floorItemGun);
+
+        public final TextureRegion texture;
+        Upgrade(TextureRegion texture){
+            this.texture = texture;
+        }
 
         /**
          * Gets a texture for this upgrade's floor item.
          *
-         * @param upgrade the upgrade
          * @return the texture for the floor item
          */
-        public static TextureRegion getTextureForUpgrade(Upgrade upgrade) {
-            switch (upgrade) {
-                case GUN:
-                    return Assets.floorItemGun;
-                default:
-                    return null;
-            }
+        public TextureRegion getTextureForUpgrade() {
+            return texture;
         }
     }
-
-    /**
-     * Class used to represent a rectangle for the melee hitbox/collision detection
-     * Used to provide a function that returns a list of entities that collide with it
-     */
-    private class MeleeHitbox extends Entity{
-
-        private float width, height;
-
-        /**
-         * Creates a rectangular hit box with bottom-left corner at coordinates x,y
-         * @param parent The current round that this is a child of
-         * @param x The x position (from bottom-left)
-         * @param y The y position (from bottom-left)
-         * @param width The width of the rectangle
-         * @param height The height of the rectangle
-         */
-        private MeleeHitbox(Round parent, float x, float y, float width, float height){
-            super(parent, x, y);
-            this.width=width;
-            this.height=height;
-        }
-
-        /**
-         * Render function, does nothing currently, could be used for debug rendering
-         * @param spriteBatch the sprite batch on which to render
-         */
-        public void render(SpriteBatch spriteBatch){
-
-        }
-
-        /**
-         * Returns the height of the rectangle
-         * @return rectangle height
-         */
-        public int getHeight(){
-            return (int)height;
-        }
-
-        /**
-         * Returns the width of the rectangle
-         * @return rectangle width
-         */
-        public int getWidth(){
-            return (int)width;
-        }
-
-        /**
-         * Gets a list of Mobs that the hitbox collides with/ are inside the hitbox
-         * @return List of mobs that the hitbox collides with
-         */
-        public List<Mob> getCollides() {
-            // Check for entity collisions.
-            List<Mob> collisionMobs = new ArrayList<Mob>();
-            for (Entity entity : parent.getEntities()) {
-
-                if (entity instanceof Mob && entity.intersects(x, y, getWidth(), getHeight())) {
-                    collisionMobs.add((Mob)entity);
-                }
-            }
-            return collisionMobs;
-        }
-
-
-    }
-
 }

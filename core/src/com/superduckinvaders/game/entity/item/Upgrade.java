@@ -18,7 +18,7 @@ public class Upgrade extends Item {
      * @param upgrade The type of the upgrade
      */
     public Upgrade(Round parent, int x, int y, Player.Upgrade upgrade) {
-        super(parent, x, y, Player.Upgrade.getTextureForUpgrade(upgrade));
+        super(parent, x, y, upgrade.getTextureForUpgrade());
 
         this.upgrade = upgrade;
     }

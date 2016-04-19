@@ -1,17 +1,22 @@
 package com.superduckinvaders.game.entity;
 
+import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.physics.box2d.*;
 import com.superduckinvaders.game.Round;
 import com.superduckinvaders.game.assets.TextureSet;
+import com.superduckinvaders.game.entity.item.PowerupManager;
+
+import java.util.ArrayList;
 
 /**
  * Represents a character in the game.
  */
-public abstract class Character extends Entity {
+public abstract class Character extends PhysicsEntity {
 
     /**
      * The direction the Character is facing.
      */
-    protected int facing = TextureSet.FACING_FRONT;
+    protected TextureSet.Facing facing = TextureSet.Facing.FRONT;
 
     /**
      * Determines whether a character should collide with objects.
@@ -28,6 +33,28 @@ public abstract class Character extends Entity {
      */
     protected int maximumHealth, currentHealth;
 
+    protected float MELEE_ATTACK_COOLDOWN = 1f;
+    protected float RANGED_ATTACK_COOLDOWN = 1f;
+
+    protected float PROJECTILE_SPEED = 300;
+    protected int RANGED_DAMAGE = 1;
+
+    protected float rangedAttackTimer = 0f;
+    protected float meleeAttackTimer = 0f;
+
+
+    protected short enemyBits = 0;
+    protected ArrayList<PhysicsEntity> enemiesInRange;
+
+    public int waterBlockCount = 0;
+
+    protected float dementedOffset = 0f;
+    protected float dementedLerpTimer = 0f;
+    protected float dementedLerpValue = 0f;
+
+    protected static float DEMENTED_DURATION = 10f;
+    protected float dementedTimer = 0f;
+
     /**
      * Initialises this Character.
      *
@@ -40,14 +67,64 @@ public abstract class Character extends Entity {
         super(parent, x, y);
 
         this.maximumHealth = this.currentHealth = maximumHealth;
+        enemiesInRange = new ArrayList<>();
+    }
+
+    public void createMeleeSensor(float meleeRange) {
+        if (meleeRange<=0) return;
+        CircleShape meleeSensorShape = new CircleShape();
+        meleeSensorShape.setRadius(meleeRange / PIXELS_PER_METRE);
+
+        FixtureDef meleeFixtureDef = new FixtureDef();
+        meleeFixtureDef.shape = meleeSensorShape;
+        meleeFixtureDef.isSensor = true;
+
+        meleeFixtureDef.filter.categoryBits = getCategoryBits();
+        meleeFixtureDef.filter.maskBits = enemyBits;
+        meleeFixtureDef.filter.groupIndex = SENSOR_GROUP;
+
+        Fixture meleeFixture = body.createFixture(meleeFixtureDef);
+        meleeFixture.setUserData(this);
+
+        meleeSensorShape.dispose();
     }
 
     /**
      * Gets the direction the character is facing
      * @return the direction this Character is facing (one of the FACING_ constants in TextureSet)
      */
-    public int getFacing() {
+    public TextureSet.Facing getFacing() {
         return facing;
+    }
+
+    public boolean isDemented() {
+        return dementedTimer>0f;
+    }
+
+    public void setDemented(boolean demented) {
+        if (demented) {
+            dementedTimer = isDemented() ? Math.max(dementedTimer, DEMENTED_DURATION*0.6f)
+                                         : DEMENTED_DURATION;
+        }
+        else {
+            dementedTimer = 0f;
+        }
+    }
+
+    public float getDementedFactor(){
+        return Math.min(1,
+                    Math.min(dementedTimer / (DEMENTED_DURATION/3),
+                        (DEMENTED_DURATION-dementedTimer) / (DEMENTED_DURATION/3)
+                    )
+                );
+    }
+
+    @Override
+    public void setVelocity(Vector2 targetVelocity, float limit) {
+        if (isDemented()) {
+            targetVelocity.rotateRad(dementedOffset);
+        }
+        super.setVelocity(targetVelocity, limit);
     }
 
     /**
@@ -72,14 +149,14 @@ public abstract class Character extends Entity {
      * Enables character collision
      */
     public void enableCollision(){
-        shouldCheckCollision=true;
+        shouldCheckCollision = true;
     }
 
     /**
      * Disables character collision
      */
     public void disableCollision(){
-        shouldCheckCollision=false;
+        shouldCheckCollision = false;
     }
 
 
@@ -101,7 +178,11 @@ public abstract class Character extends Entity {
      *
      * @param health the number of points to damage
      */
-    public abstract void damage(int health);
+    public void damage(int health){
+        currentHealth -= health;
+        currentHealth = Math.max(0, currentHealth);
+        parent.floatyNumbersManager.createDamageNumber(health, getX(), getY());
+    };
 
     /**
      * Returns if the character is dead
@@ -117,70 +198,90 @@ public abstract class Character extends Entity {
      * @return true if player is on water tile, otherwise false
      */
     protected boolean isOnWater(){
-        int tileX = ((int) x+getWidth()/2) / parent.getTileWidth();
-        int tileY = (int) y / parent.getTileHeight();
-        Object property = parent.getBaseLayer().getCell(tileX,tileY).getTile().getProperties().get("water");
-        return property!=null ? true : false;
-    }
-    /**
-     * Causes this Character to fire a projectile at the specified coordinates.
-     *
-     * @param targetx      the target x coordinate
-     * @param targety      the target y coordinate
-     * @param speed  how fast the projectile moves
-     * @param damage how much damage the projectile deals
-     */
-    public void fireAt(float targetx, float targety, int speed, int damage) {
-        parent.createProjectile(this.x + getWidth() / 2, this.y + getHeight() / 2, targetx, targety, speed, 0 ,0, damage, this);
+        return waterBlockCount > 0;
     }
 
-    /**
-     * Causes this Character to fire a projectile at the specified coordinates.
-     *
-     * @param targetx      the target x coordinate
-     * @param targety      the target y coordinate
-     * @param speed  how fast the projectile moves
-     * @param damage how much damage the projectile deals
-     */
-    public void fireAt(int startx, int starty, float targetx, float targety, int speed, int damage) {
-        parent.createProjectile(this.x + startx, this.y + starty, targetx, targety, speed, 0, 0, damage, this);
+    public void fireAt(Vector2 velocity) {
+        fireAt(getCentre(), velocity);
+
+    }
+
+    public void fireAt(Vector2 position, Vector2 velocity) {
+        parent.createProjectile(position, velocity, parent.cheatSuperDamage ? 9999 : RANGED_DAMAGE, this);
+    }
+
+    @Override
+    public void preSolve(PhysicsEntity other, Contact contact, Manifold manifold) {
+        super.preSolve(other, contact, manifold);
+        // Disabling contact here rather than changing collision mask so we can still
+        // tell when the player is contacting something to prevent re-enabling while inside an object
+        if (!shouldCheckCollision && contact.isEnabled() && 0 == (other.getCategoryBits() & BOUNDS_BITS)){
+            contact.setEnabled(false);
+        }
+    }
+
+    @Override
+    public void beginSensorContact(PhysicsEntity other, Contact contact) {
+        super.beginSensorContact(other, contact);
+        if (other instanceof Character || (other instanceof Projectile && ((Projectile)other).getOwner() != this)) {
+            enemiesInRange.add(other);
+        }
+
+    }
+
+    @Override
+    public void endSensorContact(PhysicsEntity other, Contact contact) {
+        super.endSensorContact(other, contact);
+        if (enemiesInRange.contains(other)) {
+            enemiesInRange.remove(other);
+        }
+
+    }
+
+    public boolean canBeDamaged(){
+        return true;
     }
 
     /**
      * Causes this Character to use a melee attack.
      *
-     * @param range  how far the attack reaches in pixels
-     * @param damage how much damage the attack deals
+     * @param damage how much damage the attack deals.
+     * @return whether the attack has occured.
      */
-    protected void melee(float range, int damage) {
-        // Don't let mobs melee other mobs (for now).
-        if (this instanceof Mob) {
-            Player player = parent.getPlayer();
+    protected boolean meleeAttack(int damage) {
+//        if (isStunned()) {
+//            return false;
+//        }
+        if (meleeAttackTimer > MELEE_ATTACK_COOLDOWN && !enemiesInRange.isEmpty()){
+            meleeAttackTimer = 0f;
 
-            if (distanceTo(player.getX(), player.getY()) <= range && directionTo(player.getX(), player.getY()) == facing) {
-                player.damage(damage);
-            }
-        } else {
-            // Attack the closest Character within the range.
-            Character closest = null;
-
-            for (Entity entity : parent.getEntities()) {
-                // Disregard entity if it's me or it isn't a Character.
-                if (this == entity || !(entity instanceof Character)) {
-                    continue;
+            for (PhysicsEntity entity : enemiesInRange) {
+                float angle = Math.abs(
+                        vectorTo(entity.getCentre()).angle(facing.vector())
+                );
+                if (angle<90) {
+                    if (entity instanceof Character) {
+                        Character character = (Character) entity;
+                        if (character.canBeDamaged()) {
+                            character.damage(damage);
+                            character.setVelocity(vectorTo(entity.getCentre()).cpy().setLength(400f));
+                            if (isDemented()) {
+                                character.setDemented(true);
+                            }
+                        }
+                    } else if (entity instanceof Projectile){
+                        Projectile projectile = (Projectile) entity;
+                        float speed = projectile.getVelocity().len();
+                        Vector2 newVelocity = vectorTo(projectile.getCentre()).setLength(speed*2);
+                        projectile.setOwner(this);
+                        projectile.setDamage(RANGED_DAMAGE*2);
+                        projectile.setVelocity(newVelocity);
+                    }
                 }
-
-                float x = entity.getX(), y = entity.getY();
-                if (distanceTo(x, y) <= range && directionTo(x, y) == facing && (closest == null || distanceTo(x, y) < distanceTo(closest.getX(), closest.getY()))) {
-                    closest = (Character) entity;
-                }
             }
-
-            // Can't attack if nothing in range.
-            if (closest != null) {
-                closest.damage(damage);
-            }
+            return true;
         }
+        return false;
     }
 
     /**
@@ -190,38 +291,27 @@ public abstract class Character extends Entity {
      */
     @Override
     public void update(float delta) {
+
+        meleeAttackTimer += delta;
+        rangedAttackTimer += delta;
+
+        if (isDemented()){
+            dementedTimer -= delta;
+            dementedLerpTimer += delta;
+            if (dementedLerpTimer > 1f) {
+                dementedLerpTimer = 0f;
+                dementedLerpValue = (float)((Math.random()-0.5)*2*(Math.PI*1.5f*getDementedFactor()));
+            }
+            dementedOffset = (dementedLerpValue-dementedOffset)*dementedLerpTimer;
+        }
+
         // Update Character facing.
-        if (velocityX < 0) {
-            facing = TextureSet.FACING_LEFT;
-        } else if (velocityX > 0) {
-            facing = TextureSet.FACING_RIGHT;
-        }
+        Vector2 velocity = getVelocity();
 
-        if (velocityY < 0) {
-            facing = TextureSet.FACING_FRONT;
-        } else if (velocityY > 0) {
-            facing = TextureSet.FACING_BACK;
-        }
-
-
-        float deltaX = velocityX * delta;
-        float deltaY = velocityY * delta;
-
-        //Check Collision if should
-        if(shouldCheckCollision) {
-
-            if (collidesX(deltaX)) {
-                deltaX = 0;
-            }
-
-            if (collidesY(deltaY)) {
-                deltaY = 0;
-            }
-        }
-
-        //Update position
-        x += (int) deltaX;
-        y += (int) deltaY;
+        if (Math.abs(velocity.y) > Math.abs(velocity.x))
+            facing = velocity.y > 0 ?  TextureSet.Facing.BACK : TextureSet.Facing.FRONT;
+        else if (Math.abs(velocity.y) < Math.abs(velocity.x))
+            facing = velocity.x > 0 ?  TextureSet.Facing.RIGHT : TextureSet.Facing.LEFT;
 
         if (isDead()) {
             removed = true;

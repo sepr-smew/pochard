@@ -42,8 +42,7 @@ public class CollectObjective extends Objective {
      */
     @Override
     public void update(float delta) {
-        if (parent.getPlayer().intersects(target.getX(), target.getY(), target.getWidth(), target.getHeight())) {
-            status = OBJECTIVE_COMPLETED;
-        }
+        if (target.isRemoved())
+            status = ObjectiveStatus.COMPLETED;
     }
 }
