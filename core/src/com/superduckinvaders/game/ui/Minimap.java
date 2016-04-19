@@ -13,6 +13,8 @@ import com.badlogic.gdx.utils.viewport.Viewport;
 import com.superduckinvaders.game.DuckGame;
 import com.superduckinvaders.game.GameScreen;
 import com.superduckinvaders.game.assets.Assets;
+import com.superduckinvaders.game.entity.Entity;
+import com.superduckinvaders.game.entity.mob.Mob;
 
 /**
  * Created by james on 19/04/16.
@@ -86,7 +88,7 @@ public class Minimap {
 
         // strange maths to accommodate non-uniform projections.
         Vector3 screenSize = gameScreen.viewport.project(
-                new Vector3(x+width, x+width, 0)
+                new Vector3(x+width, y+height, 0)
         ).sub(screenPos);
 
         viewport.setScreenBounds(Math.round(screenPos.x),
@@ -104,13 +106,24 @@ public class Minimap {
         gameScreen.renderMapOverhang();
 
         Vector2 playerPos = gameScreen.getRound().getPlayer().getPosition();
-//        int width = Assets.minimapHead.getRegionWidth()*6;
-//        int height = Assets.minimapHead.getRegionHeight()*6;
-//
-//        spriteBatch.draw(Assets.minimapHead, playerPos.x-width/2, playerPos.y-height/2, width, height);
+        int width = Assets.minimapHead.getRegionWidth()*4;
+        int height = Assets.minimapHead.getRegionHeight()*4;
+
+        spriteBatch.draw(Assets.minimapHead, playerPos.x-width/2, playerPos.y-height/2, width, height);
 
         spriteBatch.end();
         spriteBatch.setColor(Color.WHITE);
+
+        shapeRenderer.setProjectionMatrix(camera.combined);
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        shapeRenderer.setColor(0.9f, 0.2f, 0.2f, 0.7f);
+
+        for (Mob mob : gameScreen.mobs) {
+                Vector2 pos = mob.getCentre();
+                shapeRenderer.circle(pos.x, pos.y, 10f);
+                shapeRenderer.x(pos.x, pos.y, 5f);
+        }
+        shapeRenderer.end();
 
     }
 }

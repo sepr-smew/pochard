@@ -42,11 +42,11 @@ public class Round {
     /**
      * How near entities must be to the player to get updated in the game loop.
      */
-    public static final int UPDATE_DISTANCE_X = DuckGame.GAME_WIDTH;
+    public static final int UPDATE_DISTANCE_X = DuckGame.GAME_WIDTH*2;
     /**
      * How near entities must be to the player to get updated in the game loop.
      */
-    public static final int UPDATE_DISTANCE_Y = DuckGame.GAME_HEIGHT;
+    public static final int UPDATE_DISTANCE_Y = DuckGame.GAME_HEIGHT*2;
 
     /**
      * The GameTest instance this Round belongs to.

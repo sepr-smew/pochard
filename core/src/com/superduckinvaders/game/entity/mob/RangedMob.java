@@ -13,6 +13,7 @@ public class RangedMob extends Mob {
 
     public RangedMob(Round parent, float x, float y, int health, int speed, int score) {
         super(parent, x, y, health, speed, score, Assets.rangedBadGuy, Assets.rangedBadGuySwimming, Assets.playerShadow, new RangedAI(parent, RANGE));
+        RANGED_ATTACK_COOLDOWN = 1.5f;
     }
 
     @Override

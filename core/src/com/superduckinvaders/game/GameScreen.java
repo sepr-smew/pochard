@@ -94,6 +94,10 @@ public class GameScreen implements Screen {
      */
     private int level;
 
+    //initialise lists once for efficiency
+    public List<Mob> mobs = new ArrayList<>();
+    public List<Mob> dementedMobs = new ArrayList<>();
+
     Box2DDebugRenderer debugRenderer;
     Matrix4 debugMatrix;
 
@@ -127,7 +131,7 @@ public class GameScreen implements Screen {
         camera = new OrthographicCamera();
         viewport = new FitViewport(DuckGame.GAME_WIDTH, DuckGame.GAME_HEIGHT, camera);
 
-        minimap = new Minimap(this, 10, 10, 200, 200);
+        minimap = new Minimap(this, 20, 20, 250, 250);
 
         shaderDistort = new ShaderProgram(Gdx.files.internal("shaders/default.vsh"), Gdx.files.internal("shaders/distort.fsh"));
         if (!shaderDistort.isCompiled())
@@ -179,8 +183,6 @@ public class GameScreen implements Screen {
                 }
             }
         }
-
-
     }
 
     /**
@@ -286,8 +288,8 @@ public class GameScreen implements Screen {
         debugMatrix.scale(PhysicsEntity.PIXELS_PER_METRE, PhysicsEntity.PIXELS_PER_METRE, 1f);
 
 
-        List<Mob> mobs = new ArrayList<>();
-        List<Mob> dementedMobs = new ArrayList<>();
+        mobs.clear();
+        dementedMobs.clear();
 
         boolean isDemented = round.getPlayer().isDemented();
         float playerDementedFactor = round.getPlayer().getDementedFactor();

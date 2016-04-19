@@ -158,6 +158,7 @@ public class Player extends Character {
         enemyBits = MOB_BITS | PROJECTILE_BITS;
         RANGED_DAMAGE = 50;
         MELEE_ATTACK_COOLDOWN = 0.05f;
+        RANGED_ATTACK_COOLDOWN = 0.5f;
         createDynamicBody(PLAYER_BITS, ALL_BITS, NO_GROUP, false);
         createMeleeSensor(40f);
 

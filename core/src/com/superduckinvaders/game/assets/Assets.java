@@ -26,6 +26,7 @@ public class Assets {
      *  Player texture sets for normal and flying.
      */
     public static TextureSet playerNormal, playerFlying, playerSwimming, playerMelee;
+    public static TextureRegion minimapHead;
 
     /**
      *  Bad guy texture sets.
@@ -231,6 +232,8 @@ public class Assets {
      * If you change the player texture size, be sure to change the values here.
      */
     private static void loadPlayerTextureSets() {
+
+        minimapHead = new TextureRegion(loadTexture("textures/minimap_head.png"));
         // Load idle texture map.
         Texture playerIdle = loadTexture("textures/player_walking/player_idle.png");
 
