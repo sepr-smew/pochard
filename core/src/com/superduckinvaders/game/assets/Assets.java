@@ -334,10 +334,10 @@ public class Assets {
         Texture badGuyIdleSwim = loadTexture("textures/stormtrooper_enemy/badguy_idle_swimming.png");
 
         // Cut idle textures from texture map.
-        TextureRegion frontSwim = new TextureRegion(badGuyIdleSwim, 0, 0, 21, 24);
-        TextureRegion backSwim = new TextureRegion(badGuyIdleSwim, 21, 0, 21, 24);
-        TextureRegion leftSwim = new TextureRegion(badGuyIdleSwim, 42, 0, 21, 24);
-        TextureRegion rightSwim = new TextureRegion(badGuyIdleSwim, 63, 0, 21, 24);
+        TextureRegion frontSwim = new TextureRegion(badGuyIdleSwim, 0, 0, 32, 22);
+        TextureRegion backSwim = new TextureRegion(badGuyIdleSwim, 32, 0, 32, 22);
+        TextureRegion leftSwim = new TextureRegion(badGuyIdleSwim, 64, 0, 32, 22);
+        TextureRegion rightSwim = new TextureRegion(badGuyIdleSwim, 96, 0, 32, 22);
 
         // Load walking animations.
         Animation walkingFrontSwim = loadAnimation("textures/stormtrooper_enemy/badguy_walking_front_swimming.png", 4, 21, 0.2f);
