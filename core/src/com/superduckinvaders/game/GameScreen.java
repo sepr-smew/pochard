@@ -16,6 +16,8 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
 import com.badlogic.gdx.utils.Align;
+import com.badlogic.gdx.utils.viewport.FitViewport;
+import com.badlogic.gdx.utils.viewport.Viewport;
 import com.superduckinvaders.game.ai.PathfindingAI;
 import com.superduckinvaders.game.assets.Assets;
 import com.superduckinvaders.game.entity.Entity;
@@ -24,6 +26,7 @@ import com.superduckinvaders.game.entity.Player;
 import com.superduckinvaders.game.entity.mob.BossMob;
 import com.superduckinvaders.game.entity.mob.Mob;
 import com.superduckinvaders.game.entity.mob.RangedMob;
+import com.superduckinvaders.game.ui.Minimap;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -44,11 +47,12 @@ public class GameScreen implements Screen {
      * The game camera.
      */
     private OrthographicCamera camera;
+    public Viewport viewport;
 
     /**
      * The renderer for the tile map.
      */
-    private OrthogonalTiledMapRenderer mapRenderer;
+    public OrthogonalTiledMapRenderer mapRenderer;
 
     /**
      * The sprite batches for rendering.
@@ -101,6 +105,8 @@ public class GameScreen implements Screen {
     FrameBuffer frameBuffer;
     FrameBuffer accFrameBuffer;
 
+    Minimap minimap;
+
     float shaderTimer = 0f;
 
 
@@ -117,6 +123,11 @@ public class GameScreen implements Screen {
 
         debugRenderer = new Box2DDebugRenderer();
         shapeRenderer = new ShapeRenderer();
+
+        camera = new OrthographicCamera();
+        viewport = new FitViewport(DuckGame.GAME_WIDTH, DuckGame.GAME_HEIGHT, camera);
+
+        minimap = new Minimap(this, 10, 10, 200, 200);
 
         shaderDistort = new ShaderProgram(Gdx.files.internal("shaders/default.vsh"), Gdx.files.internal("shaders/distort.fsh"));
         if (!shaderDistort.isCompiled())
@@ -212,10 +223,8 @@ public class GameScreen implements Screen {
 //        fbBatch = new SpriteBatch();
     }
 
-    private void renderMapLower(){
+    public void renderMapLower(){
         // Render base and collision layers.
-        mapRenderer.setView(camera);
-
         mapRenderer.renderTileLayer(round.getBaseLayer());
         mapRenderer.renderTileLayer(round.getCollisionLayer());
         mapRenderer.renderTileLayer(round.getWaterEdgeLayer());
@@ -227,7 +236,7 @@ public class GameScreen implements Screen {
 
     }
 
-    private void renderMapOverhang(){
+    public void renderMapOverhang(){
 
         if (round.getOverhangLayer() != null) {
             mapRenderer.renderTileLayer(round.getOverhangLayer());
@@ -243,6 +252,10 @@ public class GameScreen implements Screen {
     public void render(float delta) {
         round.update(delta);
         shaderTimer += delta;
+
+        minimap.updatePosition(round.getPlayer().getCentre());
+
+        viewport.apply();
 
         shaderDistort.begin();
         shaderDistort.setUniformf("sinOmega", 5 + (float) (Math.sin(shaderTimer*2) * 2));
@@ -285,6 +298,8 @@ public class GameScreen implements Screen {
         spriteBatch.setShader(isDemented ? shaderColor : null);
         shaderColor.setUniformf("factor", playerDementedFactor);
 
+
+        mapRenderer.setView(camera);
         renderMapLower();
 
         spriteBatch.setProjectionMatrix(camera.combined.cpy());
@@ -445,6 +460,10 @@ public class GameScreen implements Screen {
         }
 
         spriteBatch.end();
+
+        minimap.render(shapeRenderer, spriteBatch);
+
+        viewport.apply();
     }
 
     /**
@@ -469,6 +488,7 @@ public class GameScreen implements Screen {
             elapsedSinceAnimation = 0.0f;
         }
     }
+
 
     /**
      * Updates the camera to be constrained to the player and to stay within the map.
@@ -507,10 +527,14 @@ public class GameScreen implements Screen {
 
     /**
      * Not used since the game window cannot be resized.
+     * Actually, this is still called initially and is useful
+     * for setting the screen size
      */
     @Override
     public void resize(int width, int height) {
         initialiseFrameBuffer(width, height);
+        viewport.update(width, height, true);
+        minimap.update(width, height, false);
     }
 
     /**
@@ -532,7 +556,6 @@ public class GameScreen implements Screen {
      */
     @Override
     public void hide() {
-
     }
 
     /**
