@@ -248,10 +248,12 @@ public class GameScreen implements Screen {
         shaderDistort.setUniformf("sinOmega", 5 + (float) (Math.sin(shaderTimer*2) * 2));
         shaderDistort.setUniformf("sinAlpha", (float) (shaderTimer % (Math.PI*2)));
         shaderDistort.setUniformf("magnitude", (float) (0.10f * Math.sin(shaderTimer * 3)));
+        shaderDistort.setUniformf("factor", 1);
         shaderDistort.end();
 
         shaderColor.begin();
-        shaderColor.setUniformf("colorDelta", (shaderTimer/6f) % 180f);
+        shaderColor.setUniformf("colorDelta", (shaderTimer/6f) % 1f);
+        shaderColor.setUniformf("factor", 1);
         shaderColor.end();
 
         Gdx.gl.glClearColor(0, 0, 0, 1);
@@ -275,11 +277,13 @@ public class GameScreen implements Screen {
         List<Mob> dementedMobs = new ArrayList<>();
 
         boolean isDemented = round.getPlayer().isDemented();
+        float playerDementedFactor = round.getPlayer().getDementedFactor();
 
         // Draw all entities.
         spriteBatch.begin();
 
         spriteBatch.setShader(isDemented ? shaderColor : null);
+        shaderColor.setUniformf("factor", playerDementedFactor);
 
         renderMapLower();
 
@@ -300,10 +304,12 @@ public class GameScreen implements Screen {
         }
 
         spriteBatch.setShader(shaderColor);
+        shaderColor.setUniformf("factor", 1);
         for (Mob mob : dementedMobs)
             mob.render(spriteBatch);
 
         spriteBatch.setShader(isDemented ? shaderColor : null);
+        shaderColor.setUniformf("factor", playerDementedFactor);
 
         renderMapOverhang();
 
@@ -370,34 +376,28 @@ public class GameScreen implements Screen {
         spriteBatch.begin();
 
         spriteBatch.setShader(isDemented ? shaderDistort : null);
-        //spriteBatch.setShader(null);
 
         spriteBatch.setProjectionMatrix(new Matrix4().setToOrtho2D(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight()));
 
         spriteBatch.draw(frameBuffer.getColorBufferTexture(), 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), 0, 0, 1, 1);
         spriteBatch.flush();
-        accFrameBuffer.begin();
-        //Gdx.gl.glClearColor(0, 0, 0, 0.5f);
-        //Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
-        //spriteBatch.enableBlending();
-        //spriteBatch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
-        Color c = spriteBatch.getColor();
-        spriteBatch.setColor(1f,1f,1f,0.15f);
-        spriteBatch.draw(frameBuffer.getColorBufferTexture(), 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), 0, 0, 1, 1);
-        spriteBatch.flush();
-        //spriteBatch.disableBlending();
-        accFrameBuffer.end();
 
-        spriteBatch.setColor(1f,1f,1f,0.8f);
-        spriteBatch.draw(frameBuffer.getColorBufferTexture(), 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), 0, 0, 1, 1);
-        spriteBatch.flush();
-        spriteBatch.setColor(c);
+        // motion blur
+        if (isDemented) {
+            shaderDistort.setUniformf("factor", playerDementedFactor);
+            accFrameBuffer.begin();
+            Color c = spriteBatch.getColor();
+            spriteBatch.setColor(1f, 1f, 1f, 0.15f);
+            spriteBatch.draw(frameBuffer.getColorBufferTexture(), 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), 0, 0, 1, 1);
+            spriteBatch.flush();
+            accFrameBuffer.end();
+            spriteBatch.setColor(c);
 
-        spriteBatch.setShader(null);
-
-        spriteBatch.draw(accFrameBuffer.getColorBufferTexture(), 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), 0, 0, 1, 1);
-        spriteBatch.flush();
+            spriteBatch.setShader(null);
+            spriteBatch.draw(accFrameBuffer.getColorBufferTexture(), 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), 0, 0, 1, 1);
+            spriteBatch.flush();
+        }
 //
 
         // TODO: finish UI

@@ -2,6 +2,7 @@ package com.superduckinvaders.game.assets;
 
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.math.Vector2;
 
 /**
  * Represents a standard set of textures for character facing and animation.
@@ -26,6 +27,10 @@ public final class TextureSet {
 
         public int index(){
             return index;
+        }
+
+        public Vector2 vector(){
+            return new Vector2(0f, -1f).rotate(-45*index()).nor();
         }
     }
 

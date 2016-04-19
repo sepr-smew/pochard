@@ -12,10 +12,7 @@ import com.badlogic.gdx.physics.box2d.World;
 import com.superduckinvaders.game.assets.Assets;
 import com.superduckinvaders.game.entity.*;
 import com.superduckinvaders.game.entity.item.*;
-import com.superduckinvaders.game.entity.mob.BossMob;
-import com.superduckinvaders.game.entity.mob.MeleeMob;
-import com.superduckinvaders.game.entity.mob.Mob;
-import com.superduckinvaders.game.entity.mob.RangedMob;
+import com.superduckinvaders.game.entity.mob.*;
 import com.superduckinvaders.game.objective.BossObjective;
 import com.superduckinvaders.game.objective.CollectObjective;
 import com.superduckinvaders.game.objective.KillObjective;
@@ -241,7 +238,10 @@ public class Round {
             int x = MathUtils.random(minX, maxX);
             int y = MathUtils.random(minY, maxY);
             if (!collidePoint(x, y) && (player.distanceTo(x, y) > 500))
-                if (MathUtils.random()>0.2) {
+                if (MathUtils.random()>0.8) {
+                    addEntity(new DementedMob(this, x, y, 100, 200, 15));
+                }
+                else if (MathUtils.random()>0.2) {
                     addEntity(new MeleeMob(this, x, y, 100, 100, 15));
                 }
                 else {

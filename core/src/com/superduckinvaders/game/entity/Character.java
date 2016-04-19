@@ -98,11 +98,25 @@ public abstract class Character extends PhysicsEntity {
     }
 
     public boolean isDemented() {
-        return true||dementedTimer>0f;
+        return dementedTimer>0f;
     }
 
     public void setDemented(boolean demented) {
-        this.dementedTimer = demented ? DEMENTED_DURATION : 0f;
+        if (demented) {
+            dementedTimer = isDemented() ? Math.max(dementedTimer, DEMENTED_DURATION*0.6f)
+                                         : DEMENTED_DURATION;
+        }
+        else {
+            dementedTimer = 0f;
+        }
+    }
+
+    public float getDementedFactor(){
+        return Math.min(1,
+                    Math.min(dementedTimer / (DEMENTED_DURATION/3),
+                        (DEMENTED_DURATION-dementedTimer) / (DEMENTED_DURATION/3)
+                    )
+                );
     }
 
     @Override
@@ -242,12 +256,18 @@ public abstract class Character extends PhysicsEntity {
             meleeAttackTimer = 0f;
 
             for (PhysicsEntity entity : enemiesInRange) {
-                if (directionTo(entity.getCentre()) == facing) {
+                float angle = Math.abs(
+                        vectorTo(entity.getCentre()).angle(facing.vector())
+                );
+                if (angle<90) {
                     if (entity instanceof Character) {
                         Character character = (Character) entity;
                         if (character.canBeDamaged()) {
                             character.damage(damage);
                             character.setVelocity(vectorTo(entity.getCentre()).cpy().setLength(400f));
+                            if (isDemented()) {
+                                character.setDemented(true);
+                            }
                         }
                     } else if (entity instanceof Projectile){
                         Projectile projectile = (Projectile) entity;
@@ -280,7 +300,7 @@ public abstract class Character extends PhysicsEntity {
             dementedLerpTimer += delta;
             if (dementedLerpTimer > 1f) {
                 dementedLerpTimer = 0f;
-                dementedLerpValue = (float)((Math.random()-0.5)*Math.PI*2);
+                dementedLerpValue = (float)((Math.random()-0.5)*2*(Math.PI*1.5f*getDementedFactor()));
             }
             dementedOffset = (dementedLerpValue-dementedOffset)*dementedLerpTimer;
         }

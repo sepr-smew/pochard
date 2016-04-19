@@ -3,6 +3,7 @@ varying vec2 v_texCoords;
 uniform sampler2D u_texture;
 
 uniform float colorDelta;
+uniform float factor;
 
 vec3 rgb2hsv(vec3 c)
 {
@@ -25,9 +26,13 @@ vec3 hsv2rgb(vec3 c)
 void main() {
   vec4 color = v_color * texture2D(u_texture, v_texCoords);
   vec3 hsv = rgb2hsv(color.xyz);
+  vec3 hsv2 = vec3(hsv);
 
-  hsv.x = mod(hsv.x+colorDelta, 360);
-  hsv.y = hsv.y*1.5;
-  hsv.z = hsv.z*1.5;
+  hsv2.x = hsv.x+colorDelta;
+  hsv2.y = hsv.y*1.5;
+  hsv2.z = hsv.z*1.5;
+  
+  hsv = mix(hsv, hsv2, factor);  
+
   gl_FragColor = vec4(hsv2rgb(hsv), color.w);
 }
