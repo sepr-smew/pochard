@@ -1,7 +1,6 @@
 package com.superduckinvaders.game;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.Screen;
@@ -24,11 +23,7 @@ import com.badlogic.gdx.utils.viewport.Viewport;
 import com.superduckinvaders.game.ai.PathfindingAI;
 import com.superduckinvaders.game.assets.Assets;
 import com.superduckinvaders.game.entity.*;
-import com.superduckinvaders.game.entity.Character;
-import com.superduckinvaders.game.entity.item.PowerupManager;
-import com.superduckinvaders.game.entity.mob.BossMob;
-import com.superduckinvaders.game.entity.mob.Mob;
-import com.superduckinvaders.game.entity.mob.RangedMob;
+import com.superduckinvaders.game.entity.mob.*;
 import com.superduckinvaders.game.util.KeySequenceListener;
 import com.superduckinvaders.game.ui.Minimap;
 
@@ -320,6 +315,30 @@ public class GameScreen implements Screen {
         }
     }
 
+    public void renderHealthBars(){
+        //Render health bars above enemies
+        for (Mob mob : mobs) {
+            float offsetX = mob.getX() * 2 - mob.getWidth() / 2;
+            float offsetY = mob.getY() * 2 + mob.getHeight() * 2;
+
+            // don't like but cba fixing - damn you pochard.
+            if (mob instanceof BossMob) {
+                offsetX += 40;
+                offsetY += 15;
+            } else if (mob instanceof RangedMob) {
+                offsetX -= 5;
+                offsetY += 30;
+            } else {
+                offsetX -= 17;
+                offsetY += 10;
+            }
+
+            spriteBatch.draw(Assets.healthEmpty, offsetX, offsetY);
+            Assets.healthFull.setRegionWidth((int) Math.max(0, ((float) mob.getCurrentHealth() / mob.getMaximumHealth()) * 100));
+            spriteBatch.draw(Assets.healthFull, offsetX, offsetY);
+        }
+    }
+
     public void renderPathfinding(){
         shapeRenderer.setProjectionMatrix(camera.combined.cpy());
         shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
@@ -342,19 +361,8 @@ public class GameScreen implements Screen {
         shapeRenderer.end();
     }
 
-
-    /**
-     * Main game loop.
-     * @param delta how much time has passed since the last update
-     */
-    @Override
-    public void render(float delta) {
-        round.update(delta);
+    public void updateShaderUniforms(float delta){
         shaderTimer += delta;
-
-        minimap.updatePosition(round.getPlayer().getCentre());
-
-        viewport.apply();
 
         shaderDistort.begin();
         shaderDistort.setUniformf("sinOmega", 5 + (float) (Math.sin(shaderTimer*2) * 2));
@@ -367,19 +375,31 @@ public class GameScreen implements Screen {
         shaderColor.setUniformf("colorDelta", (shaderTimer/6f) % 1f);
         shaderColor.setUniformf("factor", 1);
         shaderColor.end();
+    }
 
-        Gdx.gl.glClearColor(0, 0, 0, 1);
-        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
+    /**
+     * Main game loop.
+     * @param delta how much time has passed since the last update
+     */
+    @Override
+    public void render(float delta) {
+        round.update(delta);
+        updateShaderUniforms(delta);
+        minimap.updatePosition(round.getPlayer().getCentre());
+        updateWaterAnimations(delta);
         // Centre the camera on the player.
         updateCamera();
 
-        frameBuffer.begin();
+        viewport.apply();
+
+        // clear screen
 
         Gdx.gl.glClearColor(0, 0, 0, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
-        updateWaterAnimations(delta);
+
+        frameBuffer.begin();
 
         debugMatrix = new Matrix4(camera.combined);
         debugMatrix.scale(PhysicsEntity.PIXELS_PER_METRE, PhysicsEntity.PIXELS_PER_METRE, 1f);
@@ -431,31 +451,7 @@ public class GameScreen implements Screen {
         spriteBatch.setProjectionMatrix(camera.combined.cpy().scl(0.5f));
         round.floatyNumbersManager.render(spriteBatch);
 
-        //Render health bars above enemies
-        for (Entity entity : round.getEntities()) {
-            if (entity instanceof Mob) {
-                Mob mob = (Mob) entity;
-                float offsetX = mob.getX() * 2 - mob.getWidth() / 2;
-                float offsetY = mob.getY() * 2 + mob.getHeight() * 2;
-
-
-                // don't like but cba fixing - damn you pochard.
-                if (mob instanceof BossMob) {
-                    offsetX += 40;
-                    offsetY += 15;
-                } else if (mob instanceof RangedMob) {
-                    offsetX -= 5;
-                    offsetY += 30;
-                } else {
-                    offsetX -= 17;
-                    offsetY += 10;
-                }
-
-                spriteBatch.draw(Assets.healthEmpty, offsetX, offsetY);
-                Assets.healthFull.setRegionWidth((int) Math.max(0, ((float) mob.getCurrentHealth() / mob.getMaximumHealth()) * 100));
-                spriteBatch.draw(Assets.healthFull, offsetX, offsetY);
-            }
-        }
+        renderHealthBars();
 
         if (DuckGame.DEBUGGING) {
             debugRenderer.render(round.world, debugMatrix);
