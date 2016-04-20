@@ -24,7 +24,7 @@ public class FloatyNumber {
     /**
      * The string to render
      */
-    private String chars;
+    private String string;
 
     /**
      * How old the FloatyNumber is
@@ -49,17 +49,17 @@ public class FloatyNumber {
     /**
      * Create a new FloatyNumber which will be a string starting at a given x and y. Type defines the movement it will undertake
      * @param type The type is used to decide on the movement logic for the floaty number
-     * @param chars The character that will be rendered as the floaty number
+     * @param string The character that will be rendered as the floaty number
      * @param x The starting x coordinate
      * @param y The starting y coordinate
      */
-    public FloatyNumber(floatyNumberType type, String chars, float x, float y) {
+    public FloatyNumber(floatyNumberType type, String string, float x, float y) {
         this.type = type;
         this.x = x;
         this.y = y;
         this.STARTX=x;
         this.STARTY=y;
-        this.chars=chars;
+        this.string = string;
 
         age = MAXAGE;
 
@@ -121,14 +121,14 @@ public class FloatyNumber {
         else{
             Assets.font.setColor(0f, 0f, 0f, 1.0f);
         }
-        Assets.font.draw(batch, chars, x*2, y*2-2);
+        Assets.font.draw(batch, string, x*2, y*2-2);
         if(type==floatyNumberType.DAMAGE) {
             Assets.font.setColor(1.0f, 00f, 00f, opacity);
         }
         else{
             Assets.font.setColor(1.0f, 1.0f, 1.0f, 1.0f);
         }
-        Assets.font.draw(batch, chars, x*2, y*2);
+        Assets.font.draw(batch, string, x*2, y*2);
     }
 
     /**
