@@ -67,7 +67,7 @@ public abstract class Character extends PhysicsEntity {
         super(parent, x, y);
 
         this.maximumHealth = this.currentHealth = maximumHealth;
-        enemiesInRange = new ArrayList<>();
+        enemiesInRange = new ArrayList<PhysicsEntity>();
     }
 
     public void createMeleeSensor(float meleeRange) {

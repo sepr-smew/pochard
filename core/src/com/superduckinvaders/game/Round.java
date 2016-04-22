@@ -32,13 +32,23 @@ import java.util.*;
  */
 public class Round {
 
-    private Constructor createObstacle = (TiledMapTileLayer.Cell cell, float x, float y, float w, float h) -> (new Obstacle(this, x, y, w, h));
-    private Constructor createWater = (TiledMapTileLayer.Cell cell, float x, float y, float w, float h) -> {
-        if (cell.getTile().getProperties().get("water") != null) {
-            return new WaterEntity(this, x, y, w, h);
+    private Constructor createObstacle = new Constructor() {
+        @Override
+        public Entity construct(Round round, TiledMapTileLayer.Cell cell, float x, float y, float w, float h){
+            return new Obstacle(round, x, y, w, h);
         }
-        else {
-            return null;
+    };
+
+
+    private Constructor createWater = new Constructor() {
+        @Override
+        public Entity construct(Round round, TiledMapTileLayer.Cell cell, float x, float y, float w, float h){
+            if (cell.getTile().getProperties().get("water") != null) {
+                return new WaterEntity(round, x, y, w, h);
+            }
+            else {
+                return null;
+            }
         }
     };
 
@@ -134,8 +144,8 @@ public class Round {
 
         player = new Player(this, startX, startY);
 
-        entities = new ArrayList<>();
-        newEntities = new ArrayList<>();
+        entities = new ArrayList<Entity>();
+        newEntities = new ArrayList<Entity>();
         addEntity(player);
 
         spawnRandomMobs(mobCount, 0, 0, getMapWidth(), getMapHeight());
@@ -177,7 +187,7 @@ public class Round {
         int count = 0;
 
         // First count how many obstacle layers we have.
-        while (map.getLayers().get(String.format("Obstacles%d", count)) != null) {
+        while (map.getLayers().get("Obstacles"+count) != null) {
             count++;
         }
 
@@ -185,12 +195,12 @@ public class Round {
         if (count == 0) {
             return null;
         } else {
-            return (TiledMapTileLayer) map.getLayers().get(String.format("Obstacles%d", MathUtils.random(0, count - 1)));
+            return (TiledMapTileLayer) map.getLayers().get("Obstacles"+MathUtils.random(0, count - 1));
         }
     }
 
     private interface Constructor {
-        Entity construct(TiledMapTileLayer.Cell cell, float x, float y, float w, float h);
+        Entity construct(Round round, TiledMapTileLayer.Cell cell, float x, float y, float w, float h);
     }
 
     private void layerMap(TiledMapTileLayer layer, Constructor constructor){
@@ -207,7 +217,7 @@ public class Round {
                 if (cell != null) {
                     float tileX = x * tw;
                     float tileY = y * th;
-                    constructor.construct(cell, tileX, tileY, tw, th);
+                    constructor.construct(this, cell, tileX, tileY, tw, th);
                 }
             }
         }
@@ -394,9 +404,13 @@ public class Round {
                 Vector2.Zero.cpy()
         };
 
-        return !Arrays.stream(corners).anyMatch(
-                corner -> !rayCast(corner.cpy().add(pos.cpy()), corner.cpy().add(target.cpy()))
-        );
+        boolean result = true;
+
+        for (Vector2 corner : corners){
+            result = result && rayCast(corner.cpy().add(pos.cpy()), corner.cpy().add(target.cpy()));
+        }
+
+        return result;
     }
     public boolean cornersCanSeeTarget(Vector2 pos, Vector2 size, Vector2 target){
         float width  = size.x;
@@ -408,9 +422,13 @@ public class Round {
                 Vector2.Zero.cpy()
         };
 
-        return !Arrays.stream(corners).anyMatch(
-                corner -> !rayCast(corner.cpy().add(pos.cpy()), target.cpy())
-        );
+        boolean result = true;
+
+        for (Vector2 corner : corners){
+            result = result && rayCast(corner.cpy().add(pos.cpy()), target.cpy());
+        }
+
+        return result;
     }
 
     /**
@@ -574,7 +592,7 @@ public class Round {
             }
         }
         addAddNewEntities();
-        entities.sort(entityComparator);
+        Collections.sort(entities,entityComparator);
     }
 
 

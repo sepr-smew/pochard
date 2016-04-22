@@ -134,8 +134,8 @@ public class PathfindingAI extends AI {
             }
         }
 
-        PriorityQueue<Coordinate> fringe = new PriorityQueue<>();
-        HashMap<Coordinate, SearchNode> visitedStates = new HashMap<>();
+        PriorityQueue<Coordinate> fringe = new PriorityQueue<Coordinate>();
+        HashMap<Coordinate, SearchNode> visitedStates = new HashMap<Coordinate, SearchNode>();
         fringe.add(startCoord);
         visitedStates.put(startCoord, new SearchNode(null, startCoord, 0));
 
@@ -176,7 +176,7 @@ public class PathfindingAI extends AI {
             return null;
         } else {
             SearchNode resultNode;
-            List<SearchNode> path = new ArrayList<>();
+            List<SearchNode> path = new ArrayList<SearchNode>();
             path.add(visitedStates.get(finalCoord));
             while (path.get(path.size() - 1) != visitedStates.get(startCoord)) {
                 SearchNode pred = path.get(path.size() - 1).predecessor;

@@ -94,8 +94,8 @@ public class GameScreen implements Screen {
     private int level;
 
     //initialise lists once for efficiency
-    public List<Mob> mobs = new ArrayList<>();
-    public List<Mob> dementedMobs = new ArrayList<>();
+    public List<Mob> mobs = new ArrayList<Mob>();
+    public List<Mob> dementedMobs = new ArrayList<Mob>();
 
     Box2DDebugRenderer debugRenderer;
     Matrix4 debugMatrix;
@@ -159,7 +159,7 @@ public class GameScreen implements Screen {
         // Now we are going to loop through all of the tiles in the Water tileset
         // and get any TiledMapTile with the property "WaterFrame" set
         // We then store it in a map with the frame as the key and the Tile as the value
-        waterTiles = new HashMap<>();
+        waterTiles = new HashMap<String,TiledMapTile>();
         for(TiledMapTile tile:tileset){
             Object property = tile.getProperties().get("water");
             if(property != null)
@@ -171,7 +171,7 @@ public class GameScreen implements Screen {
         // contains the WaterFrame property.  If it does, add to the waterCellsInScene array
         // Note, this only pays attention to the very first layer of tiles.
         // If you want to support animation across multiple layers you will have to loop through each
-        waterCellsInScene = new ArrayList<>();
+        waterCellsInScene = new ArrayList<TiledMapTileLayer.Cell>();
         TiledMapTileLayer layer = (TiledMapTileLayer) round.getMap().getLayers().get(0);
         for(int x = 0; x < layer.getWidth();x++){
             for(int y = 0; y < layer.getHeight();y++){

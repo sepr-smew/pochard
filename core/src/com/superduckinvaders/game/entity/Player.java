@@ -146,7 +146,7 @@ public class Player extends Character {
      */
     private int boundsY = 7;
 
-    private ArrayList<Contact> flyingContacts = new ArrayList<>();
+    private ArrayList<Contact> flyingContacts = new ArrayList<Contact>();
 
     /**
      * If was the mouse was clicked last tick, for the infinite fire cheat.

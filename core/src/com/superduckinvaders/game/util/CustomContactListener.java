@@ -8,42 +8,58 @@ import com.superduckinvaders.game.entity.PhysicsEntity;
  */
 public class CustomContactListener implements ContactListener {
     @Override
-    public void beginContact(Contact contact) {
+    public void beginContact(final Contact contact) {
         applyCallback(contact,
-                (PhysicsEntity ea, PhysicsEntity eb, boolean sensorA, boolean sensorB) -> {
-                    if (sensorA) {
-                        ea.beginSensorContact(eb, contact);
-                    } else if (!sensorB) {
-                        ea.beginCollision(eb, contact);
+                new Callback() {
+                    @Override
+                    public void callback(PhysicsEntity ea, PhysicsEntity eb, boolean sensorA, boolean sensorB) {
+                        if (sensorA) {
+                            ea.beginSensorContact(eb, contact);
+                        } else if (!sensorB) {
+                            ea.beginCollision(eb, contact);
+                        }
                     }
                 }
         );
     }
 
     @Override
-    public void endContact(Contact contact) {
+    public void endContact(final Contact contact) {
         applyCallback(contact,
-                (PhysicsEntity ea, PhysicsEntity eb, boolean sensorA, boolean sensorB) -> {
-                    if (sensorA) {
-                        ea.endSensorContact(eb, contact);
-                    } else if (!sensorB) {
-                        ea.endCollision(eb, contact);
+                new Callback() {
+                    @Override
+                    public void callback(PhysicsEntity ea, PhysicsEntity eb, boolean sensorA, boolean sensorB) {
+                        if (sensorA) {
+                            ea.endSensorContact(eb, contact);
+                        } else if (!sensorB) {
+                            ea.endCollision(eb, contact);
+                        }
                     }
                 }
         );
     }
 
     @Override
-    public void preSolve(Contact contact, Manifold manifold) {
+    public void preSolve(final Contact contact, final Manifold manifold) {
         applyCallback(contact,
-                (PhysicsEntity ea, PhysicsEntity eb, boolean sensorA, boolean sensorB) -> ea.preSolve(eb, contact, manifold)
+                new Callback() {
+                    @Override
+                    public void callback(PhysicsEntity ea, PhysicsEntity eb, boolean sensorA, boolean sensorB) {
+                        ea.preSolve(eb, contact, manifold);
+                    }
+                }
         );
     }
 
     @Override
-    public void postSolve(Contact contact, ContactImpulse contactImpulse) {
+    public void postSolve(final Contact contact, final ContactImpulse contactImpulse) {
         applyCallback(contact,
-                (PhysicsEntity ea, PhysicsEntity eb, boolean sensorA, boolean sensorB) -> ea.postSolve(eb, contact, contactImpulse)
+                new Callback() {
+                    @Override
+                    public void callback(PhysicsEntity ea, PhysicsEntity eb, boolean sensorA, boolean sensorB) {
+                        ea.postSolve(eb, contact, contactImpulse);
+                    }
+                }
         );
     }
 
