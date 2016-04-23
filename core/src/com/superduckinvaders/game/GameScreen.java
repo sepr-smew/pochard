@@ -45,8 +45,11 @@ public class GameScreen implements Screen {
     /**
      * The game camera.
      */
-    private OrthographicCamera camera;
+    public OrthographicCamera camera;
     public Viewport viewport;
+
+    public OrthographicCamera uiCamera;
+    public Viewport uiViewport;
 
     /**
      * The renderer for the tile map.
@@ -129,6 +132,9 @@ public class GameScreen implements Screen {
 
         camera = new OrthographicCamera();
         viewport = new FitViewport(DuckGame.GAME_WIDTH, DuckGame.GAME_HEIGHT, camera);
+
+        uiCamera = new OrthographicCamera();
+        uiViewport = new FitViewport(DuckGame.GAME_WIDTH, DuckGame.GAME_HEIGHT, uiCamera);
 
         minimap = new Minimap(this, 20, 20, 250, 250);
 
@@ -274,12 +280,12 @@ public class GameScreen implements Screen {
         Assets.font.setColor(0f, 0f, 0f, 1.0f);
         Assets.font.draw(spriteBatch, "Objective: " + round.getObjective().getObjectiveString(), 10, 708);
         Assets.font.draw(spriteBatch, "Score: " + round.getPlayer().getScore(), 10, 678);
-        Assets.font.draw(spriteBatch, Gdx.graphics.getFramesPerSecond() + " FPS", Gdx.graphics.getWidth()-10, Gdx.graphics.getHeight()-12, 0, Align.right, false);
+        Assets.font.draw(spriteBatch, Gdx.graphics.getFramesPerSecond() + " FPS", DuckGame.GAME_WIDTH-10, DuckGame.GAME_HEIGHT-12, 0, Align.right, false);
 
         Assets.font.setColor(1.0f, 1.0f, 1.0f, 1.0f);
         Assets.font.draw(spriteBatch, "Objective: " + round.getObjective().getObjectiveString(), 10, 710);
         Assets.font.draw(spriteBatch, "Score: " + round.getPlayer().getScore(), 10, 680);
-        Assets.font.draw(spriteBatch, Gdx.graphics.getFramesPerSecond() + " FPS", Gdx.graphics.getWidth()-10, Gdx.graphics.getHeight()-10, 0, Align.right, false);
+        Assets.font.draw(spriteBatch, Gdx.graphics.getFramesPerSecond() + " FPS", DuckGame.GAME_WIDTH-10, DuckGame.GAME_HEIGHT-10, 0, Align.right, false);
 
         // Draw stamina bar (for flight);
         spriteBatch.draw(Assets.staminaEmpty, 1080, 10);
@@ -297,21 +303,21 @@ public class GameScreen implements Screen {
         int x = 0;
         while(x < round.getPlayer().getMaximumHealth()) {
             if(x+2 <= round.getPlayer().getCurrentHealth())
-                spriteBatch.draw(Assets.heartFull, x * 18 + (Gdx.graphics.getWidth()/2 - 50), 10);
+                spriteBatch.draw(Assets.heartFull, x * 18 + (DuckGame.GAME_WIDTH/2 - 50), 10);
             else if(x+1 <= round.getPlayer().getCurrentHealth())
-                spriteBatch.draw(Assets.heartHalf, x * 18 + (Gdx.graphics.getWidth()/2 - 50), 10);
+                spriteBatch.draw(Assets.heartHalf, x * 18 + (DuckGame.GAME_WIDTH/2 - 50), 10);
             else
-                spriteBatch.draw(Assets.heartEmpty, x * 18 + (Gdx.graphics.getWidth()/2 - 50), 10);
+                spriteBatch.draw(Assets.heartEmpty, x * 18 + (DuckGame.GAME_WIDTH/2 - 50), 10);
             x += 2;
         }
 
         // Draw round text at start of round.
         if (roundTimer < 3f) {
             roundTimer += delta;
-            spriteBatch.draw(Assets.roundText, (Gdx.graphics.getWidth() - Assets.roundText.getWidth() - Assets.roundNums[level].getWidth())/2,
-                    (Gdx.graphics.getHeight() - Assets.roundText.getHeight())/2);
-            spriteBatch.draw(Assets.roundNums[level], (Gdx.graphics.getWidth() + Assets.roundText.getWidth())/2,
-                    (Gdx.graphics.getHeight() - Assets.roundText.getHeight())/2);
+            spriteBatch.draw(Assets.roundText, (DuckGame.GAME_WIDTH - Assets.roundText.getWidth() - Assets.roundNums[level].getWidth())/2,
+                    (DuckGame.GAME_HEIGHT - Assets.roundText.getHeight())/2);
+            spriteBatch.draw(Assets.roundNums[level], (DuckGame.GAME_WIDTH + Assets.roundText.getWidth())/2,
+                    (DuckGame.GAME_HEIGHT - Assets.roundText.getHeight())/2);
         }
     }
 
@@ -391,15 +397,14 @@ public class GameScreen implements Screen {
         // Centre the camera on the player.
         updateCamera();
 
-        viewport.apply();
-
         // clear screen
-
         Gdx.gl.glClearColor(0, 0, 0, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
 
         frameBuffer.begin();
+
+        viewport.apply();
 
         debugMatrix = new Matrix4(camera.combined);
         debugMatrix.scale(PhysicsEntity.PIXELS_PER_METRE, PhysicsEntity.PIXELS_PER_METRE, 1f);
@@ -451,6 +456,7 @@ public class GameScreen implements Screen {
         spriteBatch.setProjectionMatrix(camera.combined.cpy().scl(0.5f));
         round.floatyNumbersManager.render(spriteBatch);
 
+
         renderHealthBars();
 
         if (DuckGame.DEBUGGING) {
@@ -491,9 +497,14 @@ public class GameScreen implements Screen {
         }
 //
 
+        uiViewport.apply();
+
+        spriteBatch.setProjectionMatrix(uiCamera.combined.cpy());
+
         renderUI(delta);
 
         spriteBatch.end();
+
 
         minimap.render(shapeRenderer, spriteBatch);
 
@@ -568,6 +579,7 @@ public class GameScreen implements Screen {
     public void resize(int width, int height) {
         initialiseFrameBuffer(width, height);
         viewport.update(width, height, true);
+        uiViewport.update(width, height, true);
         minimap.update(width, height, false);
     }
 

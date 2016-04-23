@@ -67,14 +67,15 @@ public class Minimap {
         camera.update();
     }
 
-    public void update(int width, int height, boolean yDown){
-        viewport.update(width, height, yDown);
+    public void update(int width, int height, boolean center){
+        viewport.update(width, height, center);
     }
 
     public void render(ShapeRenderer shapeRenderer, SpriteBatch spriteBatch){
+        gameScreen.uiViewport.apply();
         Gdx.gl.glEnable(GL20.GL_BLEND);
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
-        shapeRenderer.setProjectionMatrix(new Matrix4().setToOrtho2D(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight()));
+        shapeRenderer.setProjectionMatrix(gameScreen.uiCamera.combined.cpy());
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
         shapeRenderer.setColor(0.3f, 0.3f, 0.3f, 0.5f);
 
@@ -84,10 +85,10 @@ public class Minimap {
         shapeRenderer.end();
         Gdx.gl.glDisable(GL20.GL_BLEND);
 
-        Vector3 screenPos = gameScreen.viewport.project(new Vector3(x, y, 0));
+        Vector3 screenPos = gameScreen.uiViewport.project(new Vector3(x, y, 0));
 
         // strange maths to accommodate non-uniform projections.
-        Vector3 screenSize = gameScreen.viewport.project(
+        Vector3 screenSize = gameScreen.uiViewport.project(
                 new Vector3(x+width, y+height, 0)
         ).sub(screenPos);
 
