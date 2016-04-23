@@ -16,7 +16,7 @@ public class DesktopLauncher {
 		LwjglApplicationConfiguration config = new LwjglApplicationConfiguration();
 		config.width = 1280;
 		config.height = 720;
-		config.resizable = false;
+		config.resizable = true;
 		config.title = "The Empire Strikes Quack";
 		new LwjglApplication(new DuckGame(), config);
 	}
