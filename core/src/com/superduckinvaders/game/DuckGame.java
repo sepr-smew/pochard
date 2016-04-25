@@ -2,8 +2,16 @@ package com.superduckinvaders.game;
 
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
+import com.badlogic.gdx.graphics.Pixmap;
+import com.badlogic.gdx.graphics.PixmapIO;
+import com.badlogic.gdx.utils.BufferUtils;
+import com.badlogic.gdx.utils.ScreenUtils;
 import com.superduckinvaders.game.assets.Assets;
 import com.superduckinvaders.game.entity.Player;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 /**
  * The Website for the documentation: http://www.teampochard.co.uk/game-releases/
@@ -163,6 +171,15 @@ public class DuckGame extends Game {
     @Override
     public void render() {
         super.render();
+
+        if (Gdx.input.isKeyJustPressed(Input.Keys.V)) {
+            byte[] pixels = ScreenUtils.getFrameBufferPixels(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), true);
+
+            Pixmap pixmap = new Pixmap(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), Pixmap.Format.RGBA8888);
+            BufferUtils.copy(pixels, 0, pixmap.getPixels(), pixels.length);
+            PixmapIO.writePNG(Gdx.files.external("DuckInvaders/" + new SimpleDateFormat("SS-ss-mm-HH").format(new Date()) + ".png"), pixmap);
+            pixmap.dispose();
+        }
     }
 
     /**
