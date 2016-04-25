@@ -133,6 +133,8 @@ public class GameScreen extends ScreenAdapter {
         debugRenderer = new Box2DDebugRenderer();
         shapeRenderer = new ShapeRenderer();
 
+        spriteBatch = new SpriteBatch();
+
         camera = new OrthographicCamera();
         viewport = new FitViewport(DuckGame.GAME_WIDTH, DuckGame.GAME_HEIGHT, camera);
 
@@ -141,6 +143,8 @@ public class GameScreen extends ScreenAdapter {
 
         minimap = new Minimap(this, 20, 20, 250, 250);
 
+        minimap.initialise(spriteBatch);
+
         shaderDistort = new ShaderProgram(Gdx.files.internal("shaders/default.vsh"), Gdx.files.internal("shaders/distort.fsh"));
         if (!shaderDistort.isCompiled())
             System.out.print(shaderDistort.getLog());
@@ -148,8 +152,6 @@ public class GameScreen extends ScreenAdapter {
         shaderColor = new ShaderProgram(Gdx.files.internal("shaders/default.vsh"), Gdx.files.internal("shaders/colour.fsh"));
         if (!shaderColor.isCompiled())
             System.out.print(shaderColor.getLog());
-
-        spriteBatch = new SpriteBatch();
 
         initialiseFrameBuffer(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 
@@ -509,7 +511,7 @@ public class GameScreen extends ScreenAdapter {
         spriteBatch.end();
 
 
-        minimap.render(shapeRenderer, spriteBatch);
+        minimap.render(delta, shapeRenderer, spriteBatch);
 
         viewport.apply();
     }

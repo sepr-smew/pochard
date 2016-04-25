@@ -27,6 +27,7 @@ public class Assets {
      */
     public static TextureSet playerNormal, playerFlying, playerSwimming, playerMelee;
     public static TextureRegion minimapHead;
+    public static Texture minimapRadius;
 
     /**
      *  Bad guy texture sets.
@@ -234,6 +235,7 @@ public class Assets {
     private static void loadPlayerTextureSets() {
 
         minimapHead = new TextureRegion(loadTexture("textures/minimap_head.png"));
+        minimapRadius = loadTexture("textures/minimap_radius.png");
         // Load idle texture map.
         Texture playerIdle = loadTexture("textures/player_walking/player_idle.png");
 
