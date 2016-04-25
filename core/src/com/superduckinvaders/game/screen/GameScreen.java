@@ -263,21 +263,21 @@ public class GameScreen extends ScreenAdapter {
 
     public void renderMapLower(){
         // Render base and collision layers.
-        mapRenderer.renderTileLayer(round.getBaseLayer());
-        mapRenderer.renderTileLayer(round.getCollisionLayer());
-        mapRenderer.renderTileLayer(round.getWaterEdgeLayer());
+        mapRenderer.renderTileLayer(round.mapWrapper.getBaseLayer());
+        mapRenderer.renderTileLayer(round.mapWrapper.getCollisionLayer());
+        mapRenderer.renderTileLayer(round.mapWrapper.getWaterEdgeLayer());
 
         // Render randomly-chosen obstacles layer.
-        if (round.getObstaclesLayer() != null) {
-            mapRenderer.renderTileLayer(round.getObstaclesLayer());
+        if (round.mapWrapper.getObstaclesLayer() != null) {
+            mapRenderer.renderTileLayer(round.mapWrapper.getObstaclesLayer());
         }
 
     }
 
     public void renderMapOverhang(){
 
-        if (round.getOverhangLayer() != null) {
-            mapRenderer.renderTileLayer(round.getOverhangLayer());
+        if (round.mapWrapper.getOverhangLayer() != null) {
+            mapRenderer.renderTileLayer(round.mapWrapper.getOverhangLayer());
         }
     }
 
@@ -563,12 +563,12 @@ public class GameScreen extends ScreenAdapter {
             camera.position.y = (player.getY()) + (camera.viewportHeight / PLAYER_CAMERA_BOUND);
 
 //      Constrain camera to map
-        if (camera.position.x + camera.viewportWidth / 2f > round.getMapWidth())
-            camera.position.x = round.getMapWidth() - camera.viewportWidth / 2f;
+        if (camera.position.x + camera.viewportWidth / 2f > round.mapWrapper.getMapWidth())
+            camera.position.x = round.mapWrapper.getMapWidth() - camera.viewportWidth / 2f;
         if (camera.position.x < camera.viewportWidth / 2f)
             camera.position.x = camera.viewportWidth / 2f;
-        if (camera.position.y + camera.viewportHeight / 2f > round.getMapHeight())
-            camera.position.y = round.getMapHeight() - camera.viewportHeight / 2f;
+        if (camera.position.y + camera.viewportHeight / 2f > round.mapWrapper.getMapHeight())
+            camera.position.y = round.mapWrapper.getMapHeight() - camera.viewportHeight / 2f;
         if (camera.position.y < camera.viewportHeight / 2f)
             camera.position.y = camera.viewportHeight / 2f;
 

@@ -56,16 +56,7 @@ public class Round {
      */
     private DuckGame parent;
 
-    /**
-     * The Round's map.
-     */
-    private TiledMap map;
-
-    /**
-     * Map layer containing randomly-chosen layer of predefined obstacles.
-     */
-    private TiledMapTileLayer obstaclesLayer;
-    private TiledMapTileLayer collisionLayer;
+    public MapWrapper mapWrapper;
 
     /**
      * The player.
@@ -116,21 +107,17 @@ public class Round {
      */
     public Round(DuckGame parent, TiledMap map, int mobCount, boolean isBoss) {
         this.parent = parent;
-        this.map = map;
+        this.mapWrapper = new MapWrapper(map);
 
 
         world = new World(Vector2.Zero.cpy(), true);
         world.setContactListener(new CustomContactListener());
 
-        // Choose which obstacles to use.
-        obstaclesLayer = chooseObstacles();
-        collisionLayer = getCollisionLayer();
-
         createEnvironmentBodies();
 
         // Determine starting coordinates for player (0, 0 default).
-        int startX = Integer.parseInt(map.getProperties().get("StartX", "0", String.class)) * getTileWidth();
-        int startY = Integer.parseInt(map.getProperties().get("StartY", "0", String.class)) * getTileHeight();
+        int startX = Integer.parseInt(map.getProperties().get("StartX", "0", String.class)) * mapWrapper.getTileWidth();
+        int startY = Integer.parseInt(map.getProperties().get("StartY", "0", String.class)) * mapWrapper.getTileHeight();
 
         player = new Player(this, startX, startY);
 
@@ -138,7 +125,7 @@ public class Round {
         newEntities = new ArrayList<>();
         addEntity(player);
 
-        spawnRandomMobs(mobCount, 0, 0, getMapWidth(), getMapHeight());
+        spawnRandomMobs(mobCount, 0, 0, mapWrapper.getMapWidth(), mapWrapper.getMapHeight());
 
         //Set the objective to the boss objective if is a boss round, also spawn boss
         if(isBoss){
@@ -152,8 +139,8 @@ public class Round {
             switch (Objective.objectiveType.values()[objectiveRandom]) {
                 case COLLECT: {
                     // Determine where to spawn the objective.
-                    int objectiveX = Integer.parseInt(map.getProperties().get("ObjectiveX", "10", String.class)) * getTileWidth();
-                    int objectiveY = Integer.parseInt(map.getProperties().get("ObjectiveY", "10", String.class)) * getTileHeight();
+                    int objectiveX = Integer.parseInt(map.getProperties().get("ObjectiveX", "10", String.class)) * mapWrapper.getTileWidth();
+                    int objectiveY = Integer.parseInt(map.getProperties().get("ObjectiveY", "10", String.class)) * mapWrapper.getTileHeight();
 
                     Item objective = new CollectItem(this, objectiveX, objectiveY, Assets.flag);
                     setObjective(new CollectObjective(this, Objective.objectiveType.COLLECT, objective));
@@ -169,25 +156,13 @@ public class Round {
     }
 
     /**
-     * Randomly selects and returns a set of predefined obstacles from the map.
-     *
-     * @return the map layer containing the obstacles
+     * Gets the current map
+     * @return this Round's map
      */
-    private TiledMapTileLayer chooseObstacles() {
-        int count = 0;
-
-        // First count how many obstacle layers we have.
-        while (map.getLayers().get(String.format("Obstacles%d", count)) != null) {
-            count++;
-        }
-
-        // Choose a random layer or return null if there are no layers.
-        if (count == 0) {
-            return null;
-        } else {
-            return (TiledMapTileLayer) map.getLayers().get(String.format("Obstacles%d", MathUtils.random(0, count - 1)));
-        }
+    public TiledMap getMap() {
+        return mapWrapper.getMap();
     }
+
 
     private interface Constructor {
         Entity construct(TiledMapTileLayer.Cell cell, float x, float y, float w, float h);
@@ -198,8 +173,9 @@ public class Round {
             return;
         }
 
-        float tw = collisionLayer.getTileWidth();
-        float th = collisionLayer.getTileHeight();
+        TiledMapTileLayer collision = mapWrapper.getCollisionLayer();
+        float tw = collision.getTileWidth();
+        float th = collision.getTileHeight();
 
         for (int x = 0; x < layer.getWidth(); x++) {
             for (int y = 0; y < layer.getHeight(); y++) {
@@ -215,16 +191,16 @@ public class Round {
 
 
     private void createEnvironmentBodies() {
-        layerMap(getCollisionLayer(), createObstacle);
-        layerMap(getObstaclesLayer(), createObstacle);
-        layerMap(getBaseLayer(),     createWater   );
+        layerMap(mapWrapper.getCollisionLayer(), createObstacle);
+        layerMap(mapWrapper.getObstaclesLayer(), createObstacle);
+        layerMap(mapWrapper.getBaseLayer(),     createWater   );
 
 
-        float mapHeight = getMapHeight();
-        float mapWidth = getMapWidth();
+        float mapHeight = mapWrapper.getMapHeight();
+        float mapWidth = mapWrapper.getMapWidth();
 
         //Assumes square tiles!
-        float tw = collisionLayer.getTileWidth();
+        float tw = mapWrapper.getCollisionLayer().getTileWidth();
 
         short bounds = PhysicsEntity.BOUNDS_BITS | PhysicsEntity.WORLD_BITS;
         
@@ -263,85 +239,7 @@ public class Round {
         }
     }
 
-    /**
-     * Gets the current map
-     * @return this Round's map
-     */
-    public TiledMap getMap() {
-        return map;
-    }
 
-    /**
-     * Gets the base layer of the map
-     * @return this Round's base layer (used for calculating map width/height)
-     */
-    public TiledMapTileLayer getBaseLayer() {
-        return (TiledMapTileLayer) getMap().getLayers().get("Base");
-    }
-
-    /**
-     * Gets the collision layer of the map
-     * @return this Round's collision map layer
-     */
-    public TiledMapTileLayer getCollisionLayer() {
-        return (TiledMapTileLayer) getMap().getLayers().get("Collision");
-    }
-
-    /**
-     * Gets the obstacles layer of the map
-     * @return this Round's obstacles map layer or null if there isn't one
-     */
-    public TiledMapTileLayer getObstaclesLayer() {
-        return obstaclesLayer;
-    }
-
-    /**
-     * gets the overhang layer of the map
-     * @return this Round's overhang map layer (rendered over entities)
-     */
-    public TiledMapTileLayer getOverhangLayer() {
-        return (TiledMapTileLayer) getMap().getLayers().get("Overhang");
-    }
-
-    /**
-     * gets the water edge layer of the map
-     * @return this Round's water edge map layer (rendered over entities)
-     */
-    public TiledMapTileLayer getWaterEdgeLayer() {
-        return (TiledMapTileLayer) getMap().getLayers().get("WaterEdge");
-    }
-
-    /**
-     * Gets the width of the map in pixels
-     * @return the width of this Round's map in pixels
-     */
-    public int getMapWidth() {
-        return (int) (getBaseLayer().getWidth() * getBaseLayer().getTileWidth());
-    }
-
-    /**
-     * Gets the height of the map in pixels
-     * @return the height of this Round's map in pixels
-     */
-    public int getMapHeight() {
-        return (int) (getBaseLayer().getHeight() * getBaseLayer().getTileHeight());
-    }
-
-    /**
-     * Gets the width of each tile
-     * @return the width of one tile in this Round's map
-     */
-    public int getTileWidth() {
-        return (int) getBaseLayer().getTileWidth();
-    }
-
-    /**
-     * Gets the height of each tile
-     * @return the height of one tile in this Round's map
-     */
-    public int getTileHeight() {
-        return (int) getBaseLayer().getTileHeight();
-    }
 
     /**
      * Tests if a point resides inside a body
@@ -463,12 +361,6 @@ public class Round {
         return objective;
     }
 
-    /**
-     * @return The layer for spawn positions
-     */
-    public TiledMapTileLayer getSpawnLayer(){
-        return (TiledMapTileLayer) getMap().getLayers().get("Spawn");
-    }
 
     /**
      * Sets the current objective of this Round.

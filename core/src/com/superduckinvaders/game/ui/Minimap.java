@@ -72,8 +72,8 @@ public class Minimap {
         posMin = new Vector2(viewport.getWorldWidth(),
                                        viewport.getWorldHeight());
 
-        mapWidth = gameScreen.getRound().getMapWidth();
-        mapHeight = gameScreen.getRound().getMapHeight();
+        mapWidth = gameScreen.getRound().mapWrapper.getMapWidth();
+        mapHeight = gameScreen.getRound().mapWrapper.getMapHeight();
         
         maskWidth = mapWidth / maskScale;
         maskHeight = mapHeight / maskScale;

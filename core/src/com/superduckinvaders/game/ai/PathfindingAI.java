@@ -74,8 +74,8 @@ public class PathfindingAI extends AI {
     public PathfindingAI(Round round, float targetRange) {
         super(round);
 
-        this.tileWidth = round.getTileWidth();
-        this.tileHeight = round.getTileHeight();
+        this.tileWidth = round.mapWrapper.getTileWidth();
+        this.tileHeight = round.mapWrapper.getTileHeight();
         this.targetRange = targetRange;
     }
 

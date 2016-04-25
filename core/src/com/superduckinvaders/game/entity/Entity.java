@@ -211,22 +211,6 @@ public abstract class Entity {
         return removed;
     }
 
-    /**
-     * Ensures that this MobileEntity stays within the map area.
-     */
-    protected void checkBounds() {
-        if (x < 0) {
-            x = 0;
-        } else if (x > parent.getMapWidth() - getWidth()) {
-            x = parent.getMapWidth() - getWidth();
-        }
-
-        if (y < 0) {
-            y = 0;
-        } else if (y > parent.getMapHeight() - getHeight()) {
-            y = parent.getMapHeight() - getHeight();
-        }
-    }
 
     public void dispose(){}
 
@@ -236,8 +220,6 @@ public abstract class Entity {
      * @param delta how much time has passed since the last update
      */
     public void update(float delta) {
-
-        checkBounds();
     }
 
     /**
