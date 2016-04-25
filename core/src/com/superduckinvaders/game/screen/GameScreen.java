@@ -1,9 +1,10 @@
-package com.superduckinvaders.game;
+package com.superduckinvaders.game.screen;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.graphics.*;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
@@ -20,6 +21,8 @@ import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
+import com.superduckinvaders.game.DuckGame;
+import com.superduckinvaders.game.Round;
 import com.superduckinvaders.game.ai.PathfindingAI;
 import com.superduckinvaders.game.assets.Assets;
 import com.superduckinvaders.game.entity.*;
@@ -35,7 +38,7 @@ import java.util.Map;
 /**
  * Screen for interaction with the game.
  */
-public class GameScreen implements Screen {
+public class GameScreen extends ScreenAdapter {
 
     /**
      * The scale of the game pixels.
@@ -581,27 +584,6 @@ public class GameScreen implements Screen {
         viewport.update(width, height, true);
         uiViewport.update(width, height, true);
         minimap.update(width, height, false);
-    }
-
-    /**
-     * Not used.
-     */
-    @Override
-    public void pause() {
-    }
-
-    /**
-     * Not used.
-     */
-    @Override
-    public void resume() {
-    }
-
-    /**
-     * Not used.
-     */
-    @Override
-    public void hide() {
     }
 
     /**
