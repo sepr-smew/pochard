@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.PriorityQueue;
-import java.util.function.Function;
 
 /**
  * AI that follows and attacks the player within a certain range.

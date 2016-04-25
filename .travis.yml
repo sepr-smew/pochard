@@ -6,5 +6,10 @@ cache:
         - $HOME/.gradle/caches/
         - $HOME/.gradle/wrapper/
 install: true
+
+# version numbers
+jdk:
+    - oraclejdk8   
+
 script:
-    bash ./deploy.sh
+    - bash ./deploy.sh
