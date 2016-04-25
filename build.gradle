@@ -24,11 +24,6 @@ allprojects {
         ashleyVersion = '1.7.0'
         aiVersion = '1.8.0'
     }
-    
-    compileJava {
-        sourceCompatibility = '1.8'
-        targetCompatibility = '1.8'
-    }
 
     repositories {
         mavenCentral()
@@ -40,6 +35,10 @@ allprojects {
 project(":desktop") {
     apply plugin: "java"
 
+    compileJava {
+        sourceCompatibility = '1.8'
+        targetCompatibility = '1.8'
+    }
 
     dependencies {
         compile project(":core")
