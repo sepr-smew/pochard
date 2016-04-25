@@ -1,4 +1,4 @@
-package com.superduckinvaders.game;
+package com.superduckinvaders.game.screen;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
@@ -16,12 +16,13 @@ import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
+import com.superduckinvaders.game.DuckGame;
 import com.superduckinvaders.game.assets.Assets;
 
 /**
  * Created by tp727 on 12/02/2016.
  */
-public class OpeningCrawlScreen implements Screen {
+public class OpeningCrawlScreen extends BaseScreen {
 
 
 
@@ -33,11 +34,6 @@ public class OpeningCrawlScreen implements Screen {
     private DuckGame parent;
 
     /**
-     * Stage for containing the button.
-     */
-    private Stage stage;
-
-    /**
      * Draws the opening crawl animation
      */
     private SpriteBatch batch;
@@ -47,6 +43,8 @@ public class OpeningCrawlScreen implements Screen {
      * @param parent the game the screen is associated with
      */
     public OpeningCrawlScreen(DuckGame parent) {
+        super();
+
         this.parent = parent;
     }
 
@@ -71,46 +69,10 @@ public class OpeningCrawlScreen implements Screen {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         batch.begin();
         batch.draw(Assets.openingCrawl.getKeyFrame(totalTime),0,0,1280,720);
-        Assets.font.draw(batch, "PRESS 'SPACE' TO SKIP.", 20, Gdx.graphics.getHeight() - 20);
+        Assets.font.draw(batch, "PRESS 'SPACE' TO SKIP.", 20, DuckGame.GAME_HEIGHT - 20);
         batch.end();
         if (Assets.openingCrawl.isAnimationFinished(totalTime) || Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
             parent.showStartScreen();
         }
-    }
-
-    /**
-     * Not used since the game window cannot be resized.
-     */
-    @Override
-    public void resize(int width, int height) {
-    }
-
-    /**
-     * Not used.
-     */
-    @Override
-    public void pause() {
-    }
-
-    /**
-     * Not used.
-     */
-    @Override
-    public void resume() {
-    }
-
-    /**
-     * Not used.
-     */
-    @Override
-    public void hide() {
-    }
-
-    /**
-     * Called to dispose libGDX objects used by this StartScreen.
-     */
-    @Override
-    public void dispose() {
-
     }
 }

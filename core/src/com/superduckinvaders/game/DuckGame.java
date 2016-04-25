@@ -8,7 +8,7 @@ import com.badlogic.gdx.graphics.PixmapIO;
 import com.badlogic.gdx.utils.BufferUtils;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.superduckinvaders.game.assets.Assets;
-import com.superduckinvaders.game.entity.Player;
+import com.superduckinvaders.game.screen.*;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;

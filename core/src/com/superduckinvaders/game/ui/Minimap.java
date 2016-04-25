@@ -6,14 +6,12 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
-import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.superduckinvaders.game.DuckGame;
-import com.superduckinvaders.game.GameScreen;
+import com.superduckinvaders.game.screen.GameScreen;
 import com.superduckinvaders.game.assets.Assets;
-import com.superduckinvaders.game.entity.Entity;
 import com.superduckinvaders.game.entity.mob.Mob;
 
 /**
