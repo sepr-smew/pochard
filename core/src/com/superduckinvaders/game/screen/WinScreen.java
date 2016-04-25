@@ -21,7 +21,7 @@ import com.superduckinvaders.game.assets.Assets;
 /**
  * Screen for displaying when a player has won.
  */
-public class WinScreen extends BaseScreen {
+public class WinScreen extends Scene2dScreen {
 
     /**
      * The DuckGame this WinScreen belongs to.
@@ -32,11 +32,6 @@ public class WinScreen extends BaseScreen {
      * The sprite batch for rendering.
      */
     private SpriteBatch uiBatch;
-
-    /**
-     * Stage for containing the button.
-     */
-    private Stage stage;
 
     /**
      * The final score to display on the WinScreen.
