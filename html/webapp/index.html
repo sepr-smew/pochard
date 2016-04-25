@@ -1,32 +1,82 @@
+
 <!doctype html>
 <html>
-       <head>
-              <title>Super Duck Invaders</title>
-              <meta http-equiv="content-type" content="text/html; charset=UTF-8">
-              <link href="styles.css" rel="stylesheet" type="text/css">
-              <script src="soundmanager2-setup.js"></script>
-  			  <script src="soundmanager2-jsmin.js"></script>
-       </head>
+<head>
+       <title>Super Duck Invaders</title>
+       <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+       <link href="styles.css" rel="stylesheet" type="text/css">
+       <script src="soundmanager2-setup.js"></script>
+       <script src="soundmanager2-jsmin.js"></script>
+</head>
+<body>
 
-       <body>
-              <a class="superdev" href="javascript:%7B%20window.__gwt_bookmarklet_params%20%3D%20%7B'server_url'%3A'http%3A%2F%2Flocalhost%3A9876%2F'%7D%3B%20var%20s%20%3D%20document.createElement('script')%3B%20s.src%20%3D%20'http%3A%2F%2Flocalhost%3A9876%2Fdev_mode_on.js'%3B%20void(document.getElementsByTagName('head')%5B0%5D.appendChild(s))%3B%7D">&#8635;</a>
-              <div align="center" id="embed-html"></div>
-              <script type="text/javascript" src="html/html.nocache.js"></script>
-       </body>
+<style>
+body {
+    margin:0px;
+    overflow:hidden;
+}
 
-       <script>
-              function handleMouseDown(evt) {
-                evt.preventDefault();
-                evt.stopPropagation();
-                evt.target.style.cursor = 'default';
-              }
+#fullscreen-icon {
+    position: absolute;
+    margin-left: auto;
+    margin-right: auto;
+    left: 0;
+    right: 0;
+    top:10px;
+    width:5%;
+    height:auto;
+    opacity: 0.5;
+    background: white;
+    border-radius: 15px;
+}
+</style>
 
-              function handleMouseUp(evt) {
-                evt.preventDefault();
-                evt.stopPropagation();
-                evt.target.style.cursor = '';
-              }
-              document.getElementById('embed-html').addEventListener('mousedown', handleMouseDown, false);
-              document.getElementById('embed-html').addEventListener('mouseup', handleMouseUp, false);
-       </script>
+<!--<img id="fullscreen-icon" src="fullscreen.png" />-->
+<div align="center" id="embed-html"></div>
+<script type="text/javascript" src="html/html.nocache.js"></script>
+</body>
+
+<script>
+    function handleMouseDown(evt) {
+    evt.preventDefault();
+    evt.stopPropagation();
+    }
+
+    function handleMouseUp(evt) {
+    evt.preventDefault();
+    evt.stopPropagation();
+    }
+    document.getElementById('embed-html').addEventListener('mousedown', handleMouseDown, false);
+    document.getElementById('embed-html').addEventListener('mouseup', handleMouseUp, false);
+
+    /*
+    // Find the right method, call on correct element
+    function launchFullScreen(element) {
+    if(element.requestFullScreen) {
+      element.requestFullScreen();
+    } else if(element.mozRequestFullScreen) {
+      element.mozRequestFullScreen();
+    } else if(element.webkitRequestFullScreen) {
+      element.webkitRequestFullScreen();
+    }
+    }
+
+    document.getElementById('fullscreen-icon').addEventListener('mousedown', function(){
+        launchFullScreen(document.getElementById('embed-html'));
+    }, false);
+
+    function onFullscreen(){
+            var isFullscreen = document.fullscreenEnabled ||
+                               document.webkitFullscreenEnabled ||
+                               document.mozFullScreenEnabled ||
+                               document.msFullscreenEnabled;
+        document.getElementById('fullscreen-icon').style.visibility = isFullscreen ? "hidden" : "visible";
+    }
+    var events = "webkitfullscreenchange mozfullscreenchange fullscreenchange MSFullscreenChange".split(" ");
+    for (let event of events ){
+        document.addEventListener(event, onFullscreen, false);
+    }
+    */
+
+</script>
 </html>
