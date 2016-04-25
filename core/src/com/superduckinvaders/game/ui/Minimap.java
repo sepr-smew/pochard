@@ -48,6 +48,8 @@ public class Minimap {
 
     FrameBuffer maskBuffer;
 
+    FrameBuffer mapBuffer;
+
 
 
     public Minimap(GameScreen gameScreen, int x, int y, int width, int height){
@@ -79,6 +81,8 @@ public class Minimap {
 
         posMax = new Vector2(mapWidth - posMin.x,
                              mapHeight - posMin.y);
+
+        mapBuffer = new FrameBuffer(Pixmap.Format.RGBA8888, width, height, false);
     }
 
     public void initialise(SpriteBatch spriteBatch){
@@ -131,33 +135,28 @@ public class Minimap {
 
 
         gameScreen.uiViewport.apply();
+
+        mapBuffer.begin();
         Gdx.gl.glEnable(GL20.GL_BLEND);
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
-        shapeRenderer.setProjectionMatrix(gameScreen.uiCamera.combined.cpy());
+        shapeRenderer.setProjectionMatrix(new Matrix4().setToOrtho2D(0, 0, width, height));
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        shapeRenderer.setColor(0.3f, 0.3f, 0.3f, 0.5f);
+        shapeRenderer.setColor(0.4f, 0.4f, 0.4f, 1f);
 
         //Minimap underlay
-        shapeRenderer.rect(x-3, y-3, width+6, height+6);
+        shapeRenderer.rect(0, 0, width, height);
 
         shapeRenderer.end();
         Gdx.gl.glDisable(GL20.GL_BLEND);
 
-        Vector3 screenPos = gameScreen.uiViewport.project(new Vector3(x, y, 0));
 
-        // strange maths to accommodate non-uniform projections.
-        Vector3 screenSize = gameScreen.uiViewport.project(
-                new Vector3(x+width, y+height, 0)
-        ).sub(screenPos);
-
-        viewport.setScreenBounds(Math.round(screenPos.x),
-                Math.round(screenPos.y),
-                Math.round(screenSize.x),
-                Math.round(screenSize.y));
+        viewport.setScreenBounds(3,
+                3,
+                width-6,
+                height-6);
         viewport.apply();
 
         spriteBatch.begin();
-        spriteBatch.setColor(1, 1, 1, 0.8f);
 
         gameScreen.mapRenderer.setView(camera);
 
@@ -165,18 +164,17 @@ public class Minimap {
         gameScreen.renderMapOverhang();
 
         Vector2 playerPos = gameScreen.getRound().getPlayer().getPosition();
-        int width = Assets.minimapHead.getRegionWidth()*4;
-        int height = Assets.minimapHead.getRegionHeight()*4;
+        int playerWidth = Assets.minimapHead.getRegionWidth()*4;
+        int playerHeight = Assets.minimapHead.getRegionHeight()*4;
 
-        spriteBatch.draw(Assets.minimapHead, playerPos.x-width/2, playerPos.y-height/2, width, height);
         spriteBatch.setColor(Color.WHITE);
-        spriteBatch.draw(maskBuffer.getColorBufferTexture(), 0, 0, mapWidth, mapHeight, 0, 0, 1, 1);
+        spriteBatch.draw(Assets.minimapHead, playerPos.x-playerWidth/2, playerPos.y-playerHeight/2, playerWidth, playerHeight);
         spriteBatch.end();
-        spriteBatch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+
 
         shapeRenderer.setProjectionMatrix(camera.combined);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        shapeRenderer.setColor(0.9f, 0.2f, 0.2f, 0.7f);
+        shapeRenderer.setColor(0.9f, 0.2f, 0.2f, 0.8f);
 
         for (Mob mob : gameScreen.mobs) {
                 Vector2 pos = mob.getCentre();
@@ -184,6 +182,26 @@ public class Minimap {
                 shapeRenderer.x(pos.x, pos.y, 5f);
         }
         shapeRenderer.end();
+
+        spriteBatch.begin();
+        spriteBatch.draw(maskBuffer.getColorBufferTexture(), 0, 0, mapWidth, mapHeight, 0, 0, 1, 1);
+        spriteBatch.flush();
+
+        mapBuffer.end();
+
+        Vector3 screenPos = gameScreen.uiViewport.project(new Vector3(x, y, 0));
+
+        // strange maths to accommodate non-uniform projections.
+        Vector3 screenSize = gameScreen.uiViewport.project(
+                new Vector3(x+playerWidth, y+playerHeight, 0)
+        ).sub(screenPos);
+
+        spriteBatch.setProjectionMatrix(gameScreen.uiCamera.combined.cpy());
+
+        spriteBatch.setColor(1, 1, 1, 0.8f);
+        spriteBatch.draw(mapBuffer.getColorBufferTexture(), x, y, width, height, 0, 0, 1, 1);
+        spriteBatch.end();
+        spriteBatch.setColor(Color.WHITE);
 
     }
 }
