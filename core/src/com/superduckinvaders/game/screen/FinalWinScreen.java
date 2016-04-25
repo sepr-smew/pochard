@@ -19,6 +19,7 @@ import com.superduckinvaders.game.assets.Assets;
  * Screen for displaying when a player has won.
  */
 public class FinalWinScreen extends Scene2dScreen {
+    // Assessment 4: now inherits from Scene2dScreen, removing stub methods
 
     /**
      * The DuckGame this WinScreen belongs to.

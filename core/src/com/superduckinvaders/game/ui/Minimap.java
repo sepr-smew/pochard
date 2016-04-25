@@ -15,7 +15,7 @@ import com.superduckinvaders.game.assets.Assets;
 import com.superduckinvaders.game.entity.mob.Mob;
 
 /**
- * Created by james on 19/04/16.
+ * Assessment 4: Added to meet requirements
  */
 public class Minimap {
 

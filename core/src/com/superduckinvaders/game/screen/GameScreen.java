@@ -39,6 +39,7 @@ import java.util.Map;
  * Screen for interaction with the game.
  */
 public class GameScreen extends ScreenAdapter {
+    // Assessment 4: MASSIVE restructuring.
 
     /**
      * The scale of the game pixels.
@@ -198,6 +199,8 @@ public class GameScreen extends ScreenAdapter {
      */
     @Override
     public void show() {
+        // Assessment 4: changed to add cheat codes.
+
         // Setup input
         InputMultiplexer inputMultiplexer = new InputMultiplexer();
 
@@ -246,6 +249,7 @@ public class GameScreen extends ScreenAdapter {
     }
 
     public void initialiseFrameBuffer(int screenWidth, int screenHeight){
+        // Assessment 4: required for demented shaders
         if(frameBuffer != null) frameBuffer.dispose();
         if(accFrameBuffer != null) accFrameBuffer.dispose();
 
@@ -260,6 +264,7 @@ public class GameScreen extends ScreenAdapter {
     }
 
     public void renderMapLower(){
+        // Assessment 4: refactoring overly long method - useful for minimap rendering.
         // Render base and collision layers.
         mapRenderer.renderTileLayer(round.getBaseLayer());
         mapRenderer.renderTileLayer(round.getCollisionLayer());
@@ -273,6 +278,7 @@ public class GameScreen extends ScreenAdapter {
     }
 
     public void renderMapOverhang(){
+        // Assessment 4: refactoring overly long method - useful for minimap rendering
 
         if (round.getOverhangLayer() != null) {
             mapRenderer.renderTileLayer(round.getOverhangLayer());
@@ -280,6 +286,7 @@ public class GameScreen extends ScreenAdapter {
     }
 
     public void renderUI(float delta){
+        // Assessment 4: refactoring overly long method
         Assets.font.setColor(0f, 0f, 0f, 1.0f);
         Assets.font.draw(spriteBatch, "Objective: " + round.getObjective().getObjectiveString(), 10, 708);
         Assets.font.draw(spriteBatch, "Score: " + round.getPlayer().getScore(), 10, 678);
@@ -325,6 +332,7 @@ public class GameScreen extends ScreenAdapter {
     }
 
     public void renderHealthBars(){
+        // Assessment 4: refactoring overly long method
         //Render health bars above enemies
         for (Mob mob : mobs) {
             float offsetX = mob.getX() * 2 - mob.getWidth() / 2;
@@ -349,6 +357,7 @@ public class GameScreen extends ScreenAdapter {
     }
 
     public void renderPathfinding(){
+        // Assessment 4: used for debugging Pathfinding AI
         shapeRenderer.setProjectionMatrix(camera.combined.cpy());
         shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
 
@@ -371,6 +380,7 @@ public class GameScreen extends ScreenAdapter {
     }
 
     public void updateShaderUniforms(float delta){
+        // Assessment 4: varies demented shader parameters over time.
         shaderTimer += delta;
 
         shaderDistort.begin();
@@ -393,6 +403,10 @@ public class GameScreen extends ScreenAdapter {
      */
     @Override
     public void render(float delta) {
+        // Assessment 4: heavily refactored method - much more readable now.
+        // Now uses a single SpriteBatch rather than several as SpriteBatches are
+        // very "heavy" classes - and only one is needed anyway!
+
         round.update(delta);
         updateShaderUniforms(delta);
         minimap.updatePosition(round.getPlayer().getCentre());
@@ -404,8 +418,15 @@ public class GameScreen extends ScreenAdapter {
         Gdx.gl.glClearColor(0, 0, 0, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
+        // Assessment 4: now renders everything to a framebuffer to allow demented shaders
 
-        frameBuffer.begin();
+        boolean isDemented = round.getPlayer().isDemented();
+        float playerDementedFactor = round.getPlayer().getDementedFactor();
+
+        if (isDemented) {
+            frameBuffer.begin();
+        }
+
 
         viewport.apply();
 
@@ -415,9 +436,6 @@ public class GameScreen extends ScreenAdapter {
 
         mobs.clear();
         dementedMobs.clear();
-
-        boolean isDemented = round.getPlayer().isDemented();
-        float playerDementedFactor = round.getPlayer().getDementedFactor();
 
         // Draw all entities.
         spriteBatch.begin();
@@ -471,20 +489,21 @@ public class GameScreen extends ScreenAdapter {
         if (DuckGame.DEBUGGING) renderPathfinding();
 
 
-        frameBuffer.end();
-
-        spriteBatch.begin();
-
-        spriteBatch.setShader(isDemented ? shaderDistort : null);
-
-        spriteBatch.setProjectionMatrix(new Matrix4().setToOrtho2D(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight()));
-
-        spriteBatch.draw(frameBuffer.getColorBufferTexture(), 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), 0, 0, 1, 1);
-        spriteBatch.flush();
-
-
         // motion blur
         if (isDemented) {
+
+            frameBuffer.end();
+
+            spriteBatch.begin();
+
+            spriteBatch.setShader(isDemented ? shaderDistort : null);
+
+            spriteBatch.setProjectionMatrix(new Matrix4().setToOrtho2D(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight()));
+
+            spriteBatch.draw(frameBuffer.getColorBufferTexture(), 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), 0, 0, 1, 1);
+            spriteBatch.flush();
+
+
             shaderDistort.setUniformf("factor", playerDementedFactor);
             accFrameBuffer.begin();
             Color c = spriteBatch.getColor();
@@ -497,12 +516,14 @@ public class GameScreen extends ScreenAdapter {
             spriteBatch.setShader(null);
             spriteBatch.draw(accFrameBuffer.getColorBufferTexture(), 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), 0, 0, 1, 1);
             spriteBatch.flush();
+
+            spriteBatch.end();
         }
-//
 
         uiViewport.apply();
-
         spriteBatch.setProjectionMatrix(uiCamera.combined.cpy());
+
+        spriteBatch.begin();
 
         renderUI(delta);
 
@@ -580,6 +601,7 @@ public class GameScreen extends ScreenAdapter {
      */
     @Override
     public void resize(int width, int height) {
+        // Assessment 4: resizable windows are actually quite a nice thing to have
         initialiseFrameBuffer(width, height);
         viewport.update(width, height, true);
         uiViewport.update(width, height, true);

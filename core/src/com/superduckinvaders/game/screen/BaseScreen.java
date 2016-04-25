@@ -6,10 +6,8 @@ import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.superduckinvaders.game.DuckGame;
 
-/**
- * Created by james on 25/04/16.
- */
 public abstract class BaseScreen extends ScreenAdapter {
+    // Assessment 4: now inherits from Scene2dScreen, removing stub methods
 
     protected Viewport viewport;
 

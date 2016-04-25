@@ -8,6 +8,7 @@ import com.badlogic.gdx.scenes.scene2d.Stage;
  * Created by james on 25/04/16.
  */
 public class Scene2dScreen extends BaseScreen {
+    // Assessment 4: constructed to reduce code repetition
 
     protected Stage stage;
 
