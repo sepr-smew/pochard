@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.PriorityQueue;
-import java.util.function.Function;
 
 /**
  * AI that follows and attacks the player within a certain range.
@@ -74,8 +73,8 @@ public class PathfindingAI extends AI {
     public PathfindingAI(Round round, float targetRange) {
         super(round);
 
-        this.tileWidth = round.mapWrapper.getTileWidth();
-        this.tileHeight = round.mapWrapper.getTileHeight();
+        this.tileWidth = round.map.getTileWidth();
+        this.tileHeight = round.map.getTileHeight();
         this.targetRange = targetRange;
     }
 

@@ -1,9 +1,5 @@
 package com.superduckinvaders.game;
 
-import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Input;
-import com.badlogic.gdx.Input.Keys;
-import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.maps.tiled.TiledMap;
 import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
@@ -20,7 +16,6 @@ import com.superduckinvaders.game.objective.CollectObjective;
 import com.superduckinvaders.game.objective.KillObjective;
 import com.superduckinvaders.game.objective.Objective;
 import com.superduckinvaders.game.ui.FloatyNumbersManager;
-import com.superduckinvaders.game.util.KeySequenceListener;
 import com.superduckinvaders.game.util.Collision;
 import com.superduckinvaders.game.util.CustomContactListener;
 import com.superduckinvaders.game.util.RayCast;
@@ -56,7 +51,7 @@ public class Round {
      */
     private DuckGame parent;
 
-    public MapWrapper mapWrapper;
+    public MapWrapper map;
 
     /**
      * The player.
@@ -107,7 +102,7 @@ public class Round {
      */
     public Round(DuckGame parent, TiledMap map, int mobCount, boolean isBoss) {
         this.parent = parent;
-        this.mapWrapper = new MapWrapper(map);
+        this.map = new MapWrapper(map);
 
 
         world = new World(Vector2.Zero.cpy(), true);
@@ -116,8 +111,8 @@ public class Round {
         createEnvironmentBodies();
 
         // Determine starting coordinates for player (0, 0 default).
-        int startX = Integer.parseInt(map.getProperties().get("StartX", "0", String.class)) * mapWrapper.getTileWidth();
-        int startY = Integer.parseInt(map.getProperties().get("StartY", "0", String.class)) * mapWrapper.getTileHeight();
+        int startX = Integer.parseInt(map.getProperties().get("StartX", "0", String.class)) * this.map.getTileWidth();
+        int startY = Integer.parseInt(map.getProperties().get("StartY", "0", String.class)) * this.map.getTileHeight();
 
         player = new Player(this, startX, startY);
 
@@ -125,7 +120,7 @@ public class Round {
         newEntities = new ArrayList<>();
         addEntity(player);
 
-        spawnRandomMobs(mobCount, 0, 0, mapWrapper.getMapWidth(), mapWrapper.getMapHeight());
+        spawnRandomMobs(mobCount, 0, 0, this.map.getWidth(), this.map.getHeight());
 
         //Set the objective to the boss objective if is a boss round, also spawn boss
         if(isBoss){
@@ -139,8 +134,8 @@ public class Round {
             switch (Objective.objectiveType.values()[objectiveRandom]) {
                 case COLLECT: {
                     // Determine where to spawn the objective.
-                    int objectiveX = Integer.parseInt(map.getProperties().get("ObjectiveX", "10", String.class)) * mapWrapper.getTileWidth();
-                    int objectiveY = Integer.parseInt(map.getProperties().get("ObjectiveY", "10", String.class)) * mapWrapper.getTileHeight();
+                    int objectiveX = Integer.parseInt(map.getProperties().get("ObjectiveX", "10", String.class)) * this.map.getTileWidth();
+                    int objectiveY = Integer.parseInt(map.getProperties().get("ObjectiveY", "10", String.class)) * this.map.getTileHeight();
 
                     Item objective = new CollectItem(this, objectiveX, objectiveY, Assets.flag);
                     setObjective(new CollectObjective(this, Objective.objectiveType.COLLECT, objective));
@@ -159,8 +154,8 @@ public class Round {
      * Gets the current map
      * @return this Round's map
      */
-    public TiledMap getMap() {
-        return mapWrapper.getMap();
+    public TiledMap getTiledMap() {
+        return map.getTiledMap();
     }
 
 
@@ -173,7 +168,7 @@ public class Round {
             return;
         }
 
-        TiledMapTileLayer collision = mapWrapper.getCollisionLayer();
+        TiledMapTileLayer collision = map.getCollisionLayer();
         float tw = collision.getTileWidth();
         float th = collision.getTileHeight();
 
@@ -191,16 +186,16 @@ public class Round {
 
 
     private void createEnvironmentBodies() {
-        layerMap(mapWrapper.getCollisionLayer(), createObstacle);
-        layerMap(mapWrapper.getObstaclesLayer(), createObstacle);
-        layerMap(mapWrapper.getBaseLayer(),     createWater   );
+        layerMap(map.getCollisionLayer(), createObstacle);
+        layerMap(map.getObstaclesLayer(), createObstacle);
+        layerMap(map.getBaseLayer(),     createWater   );
 
 
-        float mapHeight = mapWrapper.getMapHeight();
-        float mapWidth = mapWrapper.getMapWidth();
+        float mapHeight = map.getHeight();
+        float mapWidth = map.getWidth();
 
         //Assumes square tiles!
-        float tw = mapWrapper.getCollisionLayer().getTileWidth();
+        float tw = map.getCollisionLayer().getTileWidth();
 
         short bounds = PhysicsEntity.BOUNDS_BITS | PhysicsEntity.WORLD_BITS;
         

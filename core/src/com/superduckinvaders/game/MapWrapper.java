@@ -18,14 +18,6 @@ public class MapWrapper {
     }
 
     /**
-     * Gets the current map
-     * @return this Round's map
-     */
-    public TiledMap getMap() {
-        return map;
-    }
-
-    /**
      * Randomly selects and returns a set of predefined obstacles from the map.
      *
      * @return the map layer containing the obstacles
@@ -47,11 +39,19 @@ public class MapWrapper {
     }
 
     /**
+     * Gets the current map
+     * @return this Round's map
+     */
+    public TiledMap getTiledMap() {
+        return map;
+    }
+
+    /**
      * Gets the base layer of the map
      * @return this Round's base layer (used for calculating map width/height)
      */
     public TiledMapTileLayer getBaseLayer() {
-        return (TiledMapTileLayer) getMap().getLayers().get("Base");
+        return (TiledMapTileLayer) getTiledMap().getLayers().get("Base");
     }
 
     /**
@@ -59,7 +59,7 @@ public class MapWrapper {
      * @return this Round's collision map layer
      */
     public TiledMapTileLayer getCollisionLayer() {
-        return (TiledMapTileLayer) getMap().getLayers().get("Collision");
+        return (TiledMapTileLayer) getTiledMap().getLayers().get("Collision");
     }
 
     /**
@@ -75,7 +75,7 @@ public class MapWrapper {
      * @return this Round's overhang map layer (rendered over entities)
      */
     public TiledMapTileLayer getOverhangLayer() {
-        return (TiledMapTileLayer) getMap().getLayers().get("Overhang");
+        return (TiledMapTileLayer) getTiledMap().getLayers().get("Overhang");
     }
 
     /**
@@ -83,21 +83,21 @@ public class MapWrapper {
      * @return this Round's water edge map layer (rendered over entities)
      */
     public TiledMapTileLayer getWaterEdgeLayer() {
-        return (TiledMapTileLayer) getMap().getLayers().get("WaterEdge");
+        return (TiledMapTileLayer) getTiledMap().getLayers().get("WaterEdge");
     }
 
     /**
      * @return The layer for spawn positions
      */
     public TiledMapTileLayer getSpawnLayer(){
-        return (TiledMapTileLayer) getMap().getLayers().get("Spawn");
+        return (TiledMapTileLayer) getTiledMap().getLayers().get("Spawn");
     }
 
     /**
      * Gets the width of the map in pixels
      * @return the width of this Round's map in pixels
      */
-    public int getMapWidth() {
+    public int getWidth() {
         return (int) (getBaseLayer().getWidth() * getBaseLayer().getTileWidth());
     }
 
@@ -105,7 +105,7 @@ public class MapWrapper {
      * Gets the height of the map in pixels
      * @return the height of this Round's map in pixels
      */
-    public int getMapHeight() {
+    public int getHeight() {
         return (int) (getBaseLayer().getHeight() * getBaseLayer().getTileHeight());
     }
 

@@ -3,7 +3,6 @@ package com.superduckinvaders.game.screen;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.InputMultiplexer;
-import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.graphics.*;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -159,12 +158,12 @@ public class GameScreen extends ScreenAdapter {
 //        camera.zoom -= 0.5;
 
 
-        mapRenderer = new OrthogonalTiledMapRenderer(round.getMap(), spriteBatch);
+        mapRenderer = new OrthogonalTiledMapRenderer(round.getTiledMap(), spriteBatch);
 
         // We created a second set of tiles for Water animations
         // For the record, this is bad for performance, use a single tileset if you can help it
         // Get a reference to the tileset named "Water"
-        TiledMapTileSet tileset =  round.getMap().getTileSets().getTileSet("Tileset");
+        TiledMapTileSet tileset =  round.getTiledMap().getTileSets().getTileSet("Tileset");
 
 
         // Now we are going to loop through all of the tiles in the Water tileset
@@ -183,7 +182,7 @@ public class GameScreen extends ScreenAdapter {
         // Note, this only pays attention to the very first layer of tiles.
         // If you want to support animation across multiple layers you will have to loop through each
         waterCellsInScene = new ArrayList<>();
-        TiledMapTileLayer layer = (TiledMapTileLayer) round.getMap().getLayers().get(0);
+        TiledMapTileLayer layer = (TiledMapTileLayer) round.getTiledMap().getLayers().get(0);
         for(int x = 0; x < layer.getWidth();x++){
             for(int y = 0; y < layer.getHeight();y++){
                 TiledMapTileLayer.Cell cell = layer.getCell(x,y);
@@ -263,21 +262,21 @@ public class GameScreen extends ScreenAdapter {
 
     public void renderMapLower(){
         // Render base and collision layers.
-        mapRenderer.renderTileLayer(round.mapWrapper.getBaseLayer());
-        mapRenderer.renderTileLayer(round.mapWrapper.getCollisionLayer());
-        mapRenderer.renderTileLayer(round.mapWrapper.getWaterEdgeLayer());
+        mapRenderer.renderTileLayer(round.map.getBaseLayer());
+        mapRenderer.renderTileLayer(round.map.getCollisionLayer());
+        mapRenderer.renderTileLayer(round.map.getWaterEdgeLayer());
 
         // Render randomly-chosen obstacles layer.
-        if (round.mapWrapper.getObstaclesLayer() != null) {
-            mapRenderer.renderTileLayer(round.mapWrapper.getObstaclesLayer());
+        if (round.map.getObstaclesLayer() != null) {
+            mapRenderer.renderTileLayer(round.map.getObstaclesLayer());
         }
 
     }
 
     public void renderMapOverhang(){
 
-        if (round.mapWrapper.getOverhangLayer() != null) {
-            mapRenderer.renderTileLayer(round.mapWrapper.getOverhangLayer());
+        if (round.map.getOverhangLayer() != null) {
+            mapRenderer.renderTileLayer(round.map.getOverhangLayer());
         }
     }
 
@@ -563,12 +562,12 @@ public class GameScreen extends ScreenAdapter {
             camera.position.y = (player.getY()) + (camera.viewportHeight / PLAYER_CAMERA_BOUND);
 
 //      Constrain camera to map
-        if (camera.position.x + camera.viewportWidth / 2f > round.mapWrapper.getMapWidth())
-            camera.position.x = round.mapWrapper.getMapWidth() - camera.viewportWidth / 2f;
+        if (camera.position.x + camera.viewportWidth / 2f > round.map.getWidth())
+            camera.position.x = round.map.getWidth() - camera.viewportWidth / 2f;
         if (camera.position.x < camera.viewportWidth / 2f)
             camera.position.x = camera.viewportWidth / 2f;
-        if (camera.position.y + camera.viewportHeight / 2f > round.mapWrapper.getMapHeight())
-            camera.position.y = round.mapWrapper.getMapHeight() - camera.viewportHeight / 2f;
+        if (camera.position.y + camera.viewportHeight / 2f > round.map.getHeight())
+            camera.position.y = round.map.getHeight() - camera.viewportHeight / 2f;
         if (camera.position.y < camera.viewportHeight / 2f)
             camera.position.y = camera.viewportHeight / 2f;
 
