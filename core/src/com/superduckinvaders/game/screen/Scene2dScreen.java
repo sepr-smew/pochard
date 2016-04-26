@@ -3,7 +3,6 @@ package com.superduckinvaders.game.screen;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.superduckinvaders.game.DuckGame;
 
 /**
  * Created by james on 25/04/16.
@@ -12,9 +11,9 @@ public class Scene2dScreen extends BaseScreen {
 
     protected Stage stage;
 
-    public Scene2dScreen(DuckGame parent) {
-        super(parent);
-        stage = new Stage(viewport, spriteBatch);
+    public Scene2dScreen() {
+        super();
+        stage = new Stage(viewport);
     }
 
     @Override

@@ -20,12 +20,21 @@ import com.superduckinvaders.game.Round;
 import com.superduckinvaders.game.assets.Assets;
 
 public class StartScreen extends Scene2dScreen {
+
+    /**
+     * The DuckGame this StartScreen belongs to.
+     */
+    private DuckGame parent;
+
     /**
      * Initialises this StartScreen.
      * @param parent the game the screen is associated with
      */
     public StartScreen(DuckGame parent) {
-        super(parent);
+        super();
+
+        this.parent = parent;
+
     }
 
     /**
@@ -34,6 +43,8 @@ public class StartScreen extends Scene2dScreen {
     @Override
     public void show() {
         super.show();
+
+        Gdx.input.setInputProcessor(stage);
 
         Image logoImage = new Image(Assets.logo);
         logoImage.setPosition((stage.getWidth() - logoImage.getPrefWidth()) / 2, 400);
@@ -76,9 +87,9 @@ public class StartScreen extends Scene2dScreen {
     @Override
     public void render(float delta) {
         super.render(delta);
-        spriteBatch.begin();
-        spriteBatch.draw(Assets.bg, 0,0);
-        spriteBatch.end();
+        stage.getBatch().begin();
+        stage.getBatch().draw(Assets.bg, 0,0);
+        stage.getBatch().end();
         stage.act();
         stage.draw();
     }

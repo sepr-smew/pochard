@@ -22,6 +22,17 @@ import com.superduckinvaders.game.assets.Assets;
  * Screen for displaying when a player has won.
  */
 public class WinScreen extends Scene2dScreen {
+
+    /**
+     * The DuckGame this WinScreen belongs to.
+     */
+    private DuckGame parent;
+
+    /**
+     * The sprite batch for rendering.
+     */
+    private SpriteBatch uiBatch;
+
     /**
      * The final score to display on the WinScreen.
      */
@@ -34,7 +45,9 @@ public class WinScreen extends Scene2dScreen {
      * @param score the final score to display
      */
     public WinScreen(DuckGame parent, int score) {
-        super(parent);
+        super();
+
+        this.parent = parent;
         this.score = score;
     }
 
@@ -44,6 +57,8 @@ public class WinScreen extends Scene2dScreen {
     @Override
     public void show() {
         super.show();
+
+        uiBatch = new SpriteBatch();
 
         Drawable drawable = new TextureRegionDrawable(Assets.button);
         Button.ButtonStyle buttonStyle = new Button.ButtonStyle(drawable,drawable,drawable);
@@ -93,9 +108,9 @@ public class WinScreen extends Scene2dScreen {
     @Override
     public void render(float delta) {
         super.render(delta);
-        spriteBatch.begin();
-        spriteBatch.draw(Assets.bg, 0, 0);
-        spriteBatch.end();
+        stage.getBatch().begin();
+        stage.getBatch().draw(Assets.bg, 0, 0);
+        stage.getBatch().end();
         stage.act();
         stage.draw();
     }

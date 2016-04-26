@@ -29,8 +29,6 @@ public class Assets {
     public static TextureRegion minimapHead;
     public static Texture minimapRadius;
 
-    public static TextureRegion flatCrawl;
-
     /**
      *  Bad guy texture sets.
      */

@@ -29,6 +29,11 @@ public class OpeningCrawlScreen extends BaseScreen {
     private float totalTime;
 
     /**
+     * The DuckGame this StartScreen belongs to.
+     */
+    private DuckGame parent;
+
+    /**
      * Draws the opening crawl animation
      */
     private SpriteBatch batch;
@@ -38,7 +43,9 @@ public class OpeningCrawlScreen extends BaseScreen {
      * @param parent the game the screen is associated with
      */
     public OpeningCrawlScreen(DuckGame parent) {
-        super(parent);
+        super();
+
+        this.parent = parent;
     }
 
     /**
