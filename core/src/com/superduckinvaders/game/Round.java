@@ -588,6 +588,7 @@ public class Round {
         if (objective != null) {
             objective.update(delta);
             if (objective.getStatus() == Objective.ObjectiveStatus.COMPLETED) {
+                player.addScore(200);
                 parent.showWinScreen(player.getScore());
             }
         }
