@@ -45,7 +45,7 @@ public class Player extends Character {
     /**
      * How much the Player's speed should be multiplied by if they have the super speed powerup.
      */
-    public static final float PLAYER_SUPER_SPEED_MULTIPLIER = 1.7f;
+    public static final float PLAYER_SUPER_SPEED_MULTIPLIER = 2.7f;
 
     /**
      * How much the Player's speed should me multiplied by if they are flying.
