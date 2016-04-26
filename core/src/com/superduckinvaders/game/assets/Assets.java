@@ -229,7 +229,7 @@ public class Assets {
             roundNums[x] = new Texture("RoundFonts/"+x+".png");
         }
 
-        flatCrawl = new TextureRegion(loadTexture("textures/flat_crawl.png"));
+        //flatCrawl = new TextureRegion(loadTexture("textures/flat_crawl.png"));
     }
 
     /**
