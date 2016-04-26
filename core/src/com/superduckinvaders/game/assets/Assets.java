@@ -226,6 +226,8 @@ public class Assets {
         for (int x=0;x<10;x++) {
             roundNums[x] = new Texture("RoundFonts/"+x+".png");
         }
+
+        //flatCrawl = new TextureRegion(loadTexture("textures/flat_crawl.png"));
     }
 
     /**
