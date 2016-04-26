@@ -14,6 +14,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import com.badlogic.gdx.utils.Scaling;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.superduckinvaders.game.DuckGame;
 import com.superduckinvaders.game.Round;
@@ -47,7 +48,7 @@ public class StartScreen extends Scene2dScreen {
         Gdx.input.setInputProcessor(stage);
 
         Image logoImage = new Image(Assets.logo);
-        logoImage.setPosition((stage.getWidth() - logoImage.getPrefWidth()) / 2, 400);
+        logoImage.setPosition((stage.getWidth() - logoImage.getPrefWidth()) / 2, 370);
 
         Drawable button = new TextureRegionDrawable(Assets.button);
 
