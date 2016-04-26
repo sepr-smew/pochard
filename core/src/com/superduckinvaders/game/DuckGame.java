@@ -5,6 +5,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.PixmapIO;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.BufferUtils;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.superduckinvaders.game.assets.Assets;
@@ -68,6 +69,8 @@ public class DuckGame extends Game {
      */
     public int level = 1;
 
+    public SpriteBatch spriteBatch;
+
 
     /**
      * Initialises the startScreen. Called by libGDX to set up the graphics.
@@ -77,6 +80,9 @@ public class DuckGame extends Game {
         Assets.load();
         Gdx.graphics.setCursor(Gdx.graphics.newCursor(Assets.cursor, 8, 8));
         totalScore = 0;
+
+        spriteBatch = new SpriteBatch();
+
         showOpeningCrawlScreen();
         //showStartScreen();
     }
@@ -119,7 +125,7 @@ public class DuckGame extends Game {
             gameScreen.dispose();
         }
         onGameScreen = true;
-        setScreen(gameScreen = new GameScreen(round, level));
+        setScreen(gameScreen = new GameScreen(this, round, level));
     }
 
     /**

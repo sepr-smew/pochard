@@ -38,7 +38,7 @@ import java.util.Map;
 /**
  * Screen for interaction with the game.
  */
-public class GameScreen extends ScreenAdapter {
+public class GameScreen extends BaseScreen {
 
     /**
      * The scale of the game pixels.
@@ -49,7 +49,6 @@ public class GameScreen extends ScreenAdapter {
      * The game camera.
      */
     public OrthographicCamera camera;
-    public Viewport viewport;
 
     public OrthographicCamera uiCamera;
     public Viewport uiViewport;
@@ -58,11 +57,6 @@ public class GameScreen extends ScreenAdapter {
      * The renderer for the tile map.
      */
     public OrthogonalTiledMapRenderer mapRenderer;
-
-    /**
-     * The sprite batches for rendering.
-     */
-    private SpriteBatch spriteBatch;
 
     /**
      * The Round this GameScreen renders.
@@ -126,17 +120,16 @@ public class GameScreen extends ScreenAdapter {
      *
      * @param round the round to be displayed
      */
-    public GameScreen(Round round, int level) {
+    public GameScreen(DuckGame parent, Round round, int level) {
+        super(parent);
         this.round = round;
         this.level = level;
 
         debugRenderer = new Box2DDebugRenderer();
         shapeRenderer = new ShapeRenderer();
 
-        spriteBatch = new SpriteBatch();
-
         camera = new OrthographicCamera();
-        viewport = new FitViewport(DuckGame.GAME_WIDTH, DuckGame.GAME_HEIGHT, camera);
+        viewport.setCamera(camera);
 
         uiCamera = new OrthographicCamera();
         uiViewport = new FitViewport(DuckGame.GAME_WIDTH, DuckGame.GAME_HEIGHT, uiCamera);

@@ -19,12 +19,6 @@ import com.superduckinvaders.game.assets.Assets;
  * Screen for displaying when a player has won.
  */
 public class FinalWinScreen extends Scene2dScreen {
-
-    /**
-     * The DuckGame this WinScreen belongs to.
-     */
-    private DuckGame parent;
-
     /**
      * The final score to display on the WinScreen.
      */
@@ -37,9 +31,7 @@ public class FinalWinScreen extends Scene2dScreen {
      * @param score the final score to display
      */
     public FinalWinScreen(DuckGame parent, int score) {
-        super();
-
-        this.parent = parent;
+        super(parent);
         this.score = score;
     }
 
@@ -94,9 +86,9 @@ public class FinalWinScreen extends Scene2dScreen {
      */
     @Override
     public void render(float delta) {
-        stage.getBatch().begin();
-        stage.getBatch().draw(Assets.bg, 0, 0);
-        stage.getBatch().end();
+        spriteBatch.begin();
+        spriteBatch.draw(Assets.bg, 0, 0);
+        spriteBatch.end();
         stage.act();
         stage.draw();
     }

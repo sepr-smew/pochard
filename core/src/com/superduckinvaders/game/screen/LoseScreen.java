@@ -22,17 +22,11 @@ import com.superduckinvaders.game.assets.Assets;
 public class LoseScreen extends Scene2dScreen {
 
     /**
-     * The DuckGame this LoseScreen belongs to.
-     */
-    private DuckGame parent;
-
-    /**
      * Initialises this LoseScreen.
      * @param parent the game the screen is associated with
      */
     public LoseScreen(DuckGame parent) {
-        super();
-        this.parent = parent;
+        super(parent);
     }
 
     /**
@@ -81,9 +75,9 @@ public class LoseScreen extends Scene2dScreen {
     public void render(float delta) {
         super.render(delta);
 
-        stage.getBatch().begin();
-        stage.getBatch().draw(Assets.bg, 0, 0);
-        stage.getBatch().end();
+        spriteBatch.begin();
+        spriteBatch.draw(Assets.bg, 0, 0);
+        spriteBatch.end();
         stage.draw();
     }
 }
