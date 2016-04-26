@@ -341,10 +341,10 @@ public class Assets {
         Texture badGuyIdleSwim = loadTexture("textures/stormtrooper_enemy/badguy_idle_swimming.png");
 
         // Cut idle textures from texture map.
-        TextureRegion frontSwim = new TextureRegion(badGuyIdleSwim, 0, 0, 32, 22);
-        TextureRegion backSwim = new TextureRegion(badGuyIdleSwim, 32, 0, 32, 22);
-        TextureRegion leftSwim = new TextureRegion(badGuyIdleSwim, 64, 0, 32, 22);
-        TextureRegion rightSwim = new TextureRegion(badGuyIdleSwim, 96, 0, 32, 22);
+        TextureRegion frontSwim = new TextureRegion(badGuyIdleSwim, 0, 0, 21, 22);
+        TextureRegion backSwim = new TextureRegion(badGuyIdleSwim, 21, 0, 21, 22);
+        TextureRegion leftSwim = new TextureRegion(badGuyIdleSwim, 42, 0, 21, 22);
+        TextureRegion rightSwim = new TextureRegion(badGuyIdleSwim, 63, 0, 21, 22);
 
         // Load walking animations.
         Animation walkingFrontSwim = loadAnimation("textures/stormtrooper_enemy/badguy_walking_front_swimming.png", 4, 21, 0.2f);
@@ -376,10 +376,10 @@ public class Assets {
         Texture rangedBadGuyIdleSwim = loadTexture("textures/squirrel_enemy/badguy_idle_swim.png");
 
         // Cut idle textures from texture map.
-        TextureRegion rangedfrontSwim = new TextureRegion(rangedBadGuyIdleSwim, 0, 0, 21, 24);
-        TextureRegion rangedbackSwim = new TextureRegion(rangedBadGuyIdleSwim, 21, 0, 21, 24);
-        TextureRegion rangedleftSwim = new TextureRegion(rangedBadGuyIdleSwim, 42, 0, 21, 24);
-        TextureRegion rangedrightSwim = new TextureRegion(rangedBadGuyIdleSwim, 63, 0, 21, 24);
+        TextureRegion rangedfrontSwim = new TextureRegion(rangedBadGuyIdleSwim,  0, 0, 32, 24);
+        TextureRegion rangedbackSwim = new TextureRegion(rangedBadGuyIdleSwim,  32, 0, 32, 24);
+        TextureRegion rangedleftSwim = new TextureRegion(rangedBadGuyIdleSwim,  64, 0, 32, 24);
+        TextureRegion rangedrightSwim = new TextureRegion(rangedBadGuyIdleSwim, 96, 0, 32, 24);
 
         // Load walking animations.
         Animation rangedWalkingFrontSwim = loadAnimation("textures/squirrel_enemy/badguy_walking_front_swim.png", 4, 32, 0.2f);
