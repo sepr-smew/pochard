@@ -24,7 +24,9 @@ public class HtmlLauncher extends GwtApplication {
     public GwtApplicationConfiguration getConfig () {
         int height = com.google.gwt.user.client.Window.getClientHeight();
         int width = com.google.gwt.user.client.Window.getClientWidth();
-        return new GwtApplicationConfiguration(width, height);
+        GwtApplicationConfiguration cfg = new GwtApplicationConfiguration(width, height);
+        cfg.preserveDrawingBuffer = true;
+        return cfg;
     }
 
     @Override
