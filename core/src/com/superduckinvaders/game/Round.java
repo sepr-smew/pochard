@@ -148,7 +148,7 @@ public class Round {
         newEntities = new ArrayList<Entity>();
         addEntity(player);
 
-        spawnRandomMobs(mobCount, 0, 0, getMapWidth(), getMapHeight());
+        spawnRandomMobs(mobCount, 40, 40, getMapWidth()-40, getMapHeight()-40);
 
         //Set the objective to the boss objective if is a boss round, also spawn boss
         if(isBoss){
@@ -172,7 +172,7 @@ public class Round {
                     break;
                 }
                 case KILL: {
-                    setObjective(new KillObjective(this, Objective.objectiveType.KILL, MathUtils.random(mobCount / 2, mobCount)));
+                    setObjective(new KillObjective(this, Objective.objectiveType.KILL, MathUtils.random(mobCount /3, 2*mobCount/3)));
                 }
             }
         }
@@ -259,17 +259,16 @@ public class Round {
         for (int i = 0; i < amount;) {
             int x = MathUtils.random(minX, maxX);
             int y = MathUtils.random(minY, maxY);
-            if (!collidePoint(x, y) && (player.distanceTo(x, y) > 500))
-                if (MathUtils.random()>0.8) {
+            if (!collidePoint(x, y)) {
+                if (MathUtils.random() > 0.8) {
                     addEntity(new DementedMob(this, x, y, 100, 200, 15));
-                }
-                else if (MathUtils.random()>0.2) {
+                } else if (MathUtils.random() > 0.2) {
                     addEntity(new MeleeMob(this, x, y, 100, 100, 15));
-                }
-                else {
+                } else {
                     addEntity(new RangedMob(this, x, y, 100, 100, 25));
                 }
-            i++;
+                i++;
+            }
         }
     }
 
