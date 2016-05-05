@@ -255,13 +255,13 @@ public class Assets {
         Texture playerIdleSwim = loadTexture("textures/player_swimming/player_idle_swimming.png");
 
         // Cut idle swimming textures from texture map.
-        TextureRegion frontSwim = new TextureRegion(playerIdleSwim, 0, 0, 32, 64);
-        TextureRegion frontLeftSwim = new TextureRegion(playerIdleSwim, 32, 0, 32, 64);
-        TextureRegion leftSwim = new TextureRegion(playerIdleSwim, 64, 0, 32, 64);
-        TextureRegion backLeftSwim = new TextureRegion(playerIdleSwim, 96, 0, 32, 64);
-        TextureRegion backSwim = new TextureRegion(playerIdleSwim, 128, 0, 32, 64);
-        TextureRegion backRightSwim = new TextureRegion(playerIdleSwim, 160, 0, 32, 64);
-        TextureRegion rightSwim = new TextureRegion(playerIdleSwim, 192, 0, 32, 64);
+        TextureRegion frontSwim      = new TextureRegion(playerIdleSwim, 0, 0, 32, 64);
+        TextureRegion frontLeftSwim  = new TextureRegion(playerIdleSwim, 32, 0, 32, 64);
+        TextureRegion leftSwim       = new TextureRegion(playerIdleSwim, 64, 0, 32, 64);
+        TextureRegion backLeftSwim   = new TextureRegion(playerIdleSwim, 96, 0, 32, 64);
+        TextureRegion backSwim       = new TextureRegion(playerIdleSwim, 128, 0, 32, 64);
+        TextureRegion backRightSwim  = new TextureRegion(playerIdleSwim, 160, 0, 32, 64);
+        TextureRegion rightSwim      = new TextureRegion(playerIdleSwim, 192, 0, 32, 64);
         TextureRegion frontRightSwim = new TextureRegion(playerIdleSwim, 224, 0, 32, 64);
 
 
@@ -376,10 +376,10 @@ public class Assets {
         Texture rangedBadGuyIdleSwim = loadTexture("textures/squirrel_enemy/badguy_idle_swim.png");
 
         // Cut idle textures from texture map.
-        TextureRegion rangedfrontSwim = new TextureRegion(rangedBadGuyIdleSwim, 0, 0, 21, 24);
-        TextureRegion rangedbackSwim = new TextureRegion(rangedBadGuyIdleSwim, 21, 0, 21, 24);
-        TextureRegion rangedleftSwim = new TextureRegion(rangedBadGuyIdleSwim, 42, 0, 21, 24);
-        TextureRegion rangedrightSwim = new TextureRegion(rangedBadGuyIdleSwim, 63, 0, 21, 24);
+        TextureRegion rangedfrontSwim = new TextureRegion(rangedBadGuyIdleSwim, 0, 0, 32, 22);
+        TextureRegion rangedbackSwim = new TextureRegion(rangedBadGuyIdleSwim, 32, 0, 32, 22);
+        TextureRegion rangedleftSwim = new TextureRegion(rangedBadGuyIdleSwim, 64, 0, 32, 22);
+        TextureRegion rangedrightSwim = new TextureRegion(rangedBadGuyIdleSwim, 96, 0, 32, 22);
 
         // Load walking animations.
         Animation rangedWalkingFrontSwim = loadAnimation("textures/squirrel_enemy/badguy_walking_front_swim.png", 4, 32, 0.2f);
