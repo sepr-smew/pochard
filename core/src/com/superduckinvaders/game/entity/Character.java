@@ -3,6 +3,7 @@ package com.superduckinvaders.game.entity;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
 import com.superduckinvaders.game.Round;
+import com.superduckinvaders.game.assets.Assets;
 import com.superduckinvaders.game.assets.TextureSet;
 import com.superduckinvaders.game.entity.item.PowerupManager;
 
@@ -208,6 +209,7 @@ public abstract class Character extends PhysicsEntity {
 
     public void fireAt(Vector2 position, Vector2 velocity) {
         parent.createProjectile(position, velocity, parent.cheatSuperDamage ? 9999 : RANGED_DAMAGE, this);
+        Assets.laser.play(0.1f);
     }
 
     @Override
@@ -279,6 +281,7 @@ public abstract class Character extends PhysicsEntity {
                     }
                 }
             }
+            Assets.saberHit.play(0.05f);
             return true;
         }
         return false;

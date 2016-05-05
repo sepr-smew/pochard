@@ -255,13 +255,13 @@ public class Assets {
         Texture playerIdleSwim = loadTexture("textures/player_swimming/player_idle_swimming.png");
 
         // Cut idle swimming textures from texture map.
-        TextureRegion frontSwim = new TextureRegion(playerIdleSwim, 0, 0, 32, 64);
-        TextureRegion frontLeftSwim = new TextureRegion(playerIdleSwim, 32, 0, 32, 64);
-        TextureRegion leftSwim = new TextureRegion(playerIdleSwim, 64, 0, 32, 64);
-        TextureRegion backLeftSwim = new TextureRegion(playerIdleSwim, 96, 0, 32, 64);
-        TextureRegion backSwim = new TextureRegion(playerIdleSwim, 128, 0, 32, 64);
-        TextureRegion backRightSwim = new TextureRegion(playerIdleSwim, 160, 0, 32, 64);
-        TextureRegion rightSwim = new TextureRegion(playerIdleSwim, 192, 0, 32, 64);
+        TextureRegion frontSwim      = new TextureRegion(playerIdleSwim, 0, 0, 32, 64);
+        TextureRegion frontLeftSwim  = new TextureRegion(playerIdleSwim, 32, 0, 32, 64);
+        TextureRegion leftSwim       = new TextureRegion(playerIdleSwim, 64, 0, 32, 64);
+        TextureRegion backLeftSwim   = new TextureRegion(playerIdleSwim, 96, 0, 32, 64);
+        TextureRegion backSwim       = new TextureRegion(playerIdleSwim, 128, 0, 32, 64);
+        TextureRegion backRightSwim  = new TextureRegion(playerIdleSwim, 160, 0, 32, 64);
+        TextureRegion rightSwim      = new TextureRegion(playerIdleSwim, 192, 0, 32, 64);
         TextureRegion frontRightSwim = new TextureRegion(playerIdleSwim, 224, 0, 32, 64);
 
 
